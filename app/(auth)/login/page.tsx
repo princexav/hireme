@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,7 +12,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -20,8 +19,9 @@ export default function LoginPage() {
     setError('')
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setError(error.message); setLoading(false); return }
-    router.push('/search')
+    setLoading(false)
+    if (error) { setError(error.message); return }
+    window.location.href = '/search'
   }
 
   return (
@@ -34,12 +34,12 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email}
+              <Input id="email" type="email" autoComplete="email" value={email}
                 onChange={e => setEmail(e.target.value)} required />
             </div>
             <div className="space-y-1">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={password}
+              <Input id="password" type="password" autoComplete="current-password" value={password}
                 onChange={e => setPassword(e.target.value)} required />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
@@ -47,7 +47,7 @@ export default function LoginPage() {
               {loading ? 'Signing in…' : 'Sign in'}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              No account? <a href="/signup" className="underline">Sign up</a>
+              No account? <Link href="/signup" className="underline">Sign up</Link>
             </p>
           </form>
         </CardContent>
