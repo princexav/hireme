@@ -9,11 +9,10 @@ export type Preferences = {
 }
 
 export type Profile = {
-  id: string
   user_id: string
   raw_resume_text: string
   extracted_skills: string[]
-  preferences: Preferences
+  preferences: Partial<Preferences>
   updated_at: string
 }
 

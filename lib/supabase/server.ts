@@ -10,9 +10,13 @@ export async function createClient() {
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // Silently ignored in read-only server contexts (Server Components)
+          }
         },
       },
     }
