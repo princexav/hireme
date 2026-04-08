@@ -21,8 +21,11 @@ export function PreferencesForm({ initial, onSave }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    await onSave({ role, location, salary_min: salaryMin, salary_max: salaryMax, remote })
-    setLoading(false)
+    try {
+      await onSave({ role, location, salary_min: salaryMin, salary_max: salaryMax, remote })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
