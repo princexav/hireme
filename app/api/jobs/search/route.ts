@@ -50,16 +50,19 @@ export async function POST(request: Request) {
   try {
     const scoredJobs = await searchJobs({ resumeText, preferences, rawSearchResults: uniqueResults })
 
-    const toInsert = scoredJobs.map(job => ({
-      user_id: user.id,
-      title: job.title,
-      company: job.company,
-      url: job.url,
-      jd_text: job.jd_text,
-      match_score: Math.min(100, Math.max(0, job.match_score)),
-      match_reasons: job.match_reasons,
-      status: job.match_score >= 70 ? 'queued' : 'saved',
-    }))
+    const toInsert = scoredJobs.map(job => {
+      const clampedScore = Math.min(100, Math.max(0, job.match_score))
+      return {
+        user_id: user.id,
+        title: job.title,
+        company: job.company,
+        url: job.url,
+        jd_text: job.jd_text,
+        match_score: clampedScore,
+        match_reasons: job.match_reasons,
+        status: clampedScore >= 70 ? 'queued' : 'saved',
+      }
+    })
 
     if (toInsert.length === 0) return NextResponse.json([])
 
