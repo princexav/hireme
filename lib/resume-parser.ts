@@ -6,10 +6,11 @@ export async function extractTextFromResume(file: File): Promise<string> {
   }
 
   if (type === 'application/pdf') {
-    const pdfParse = (await import('pdf-parse')).default
+    const { PDFParse } = await import('pdf-parse')
     const buffer = Buffer.from(await file.arrayBuffer())
-    const data = await pdfParse(buffer)
-    return data.text
+    const parser = new PDFParse({ data: buffer })
+    const result = await parser.getText()
+    return result.text
   }
 
   if (
