@@ -15,6 +15,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .eq('user_id', user.id)
     .single()
 
+  const { data: queuedJobs } = await supabase
+    .from('jobs')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('status', 'queued')
+  const queueCount = queuedJobs?.length ?? 0
+
   // Allow onboarding page through without profile check
   return (
     <div className="flex h-screen overflow-hidden">
@@ -22,7 +29,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <nav className="w-48 border-r bg-muted/40 flex flex-col p-4 gap-2 shrink-0">
         <span className="font-bold text-lg mb-4">HireMe</span>
         <Link href="/search" className="text-sm hover:text-primary">Find Jobs</Link>
-        <Link href="/queue" className="text-sm hover:text-primary">Apply Queue</Link>
+        <Link href="/queue" className="text-sm hover:text-primary flex items-center gap-2">
+          Apply Queue
+          {queueCount > 0 && (
+            <span className="bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {queueCount}
+            </span>
+          )}
+        </Link>
         <Link href="/tracker" className="text-sm hover:text-primary">Tracker</Link>
         <div className="mt-auto">
           <Link href="/onboarding" className="text-xs text-muted-foreground hover:text-primary">
