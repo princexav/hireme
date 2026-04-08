@@ -13,6 +13,7 @@ export function ChatSidebar() {
   }])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
+  const [error, setError] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const { profile } = useProfile()
 
@@ -28,42 +29,51 @@ export function ChatSidebar() {
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setStreaming(true)
+    setError('')
 
     const context = profile
       ? `Skills: ${profile.extracted_skills.join(', ')}. Target role: ${profile.preferences?.role}. Location: ${profile.preferences?.location}.`
       : 'No profile loaded yet.'
 
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: [...messages, userMsg], context }),
-    })
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...messages, userMsg], context }),
+      })
 
-    if (!res.ok || !res.body) { setStreaming(false); return }
-
-    setMessages(prev => [...prev, { role: 'assistant', content: '' }])
-
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    let done = false
-
-    while (!done) {
-      const { value, done: d } = await reader.read()
-      done = d
-      if (value) {
-        const chunk = decoder.decode(value)
-        setMessages(prev => {
-          const updated = [...prev]
-          updated[updated.length - 1] = {
-            role: 'assistant',
-            content: updated[updated.length - 1].content + chunk,
-          }
-          return updated
-        })
+      if (!res.ok || !res.body) {
+        setError('Failed to get response — try again')
+        setStreaming(false)
+        return
       }
-    }
 
-    setStreaming(false)
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }])
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let done = false
+
+      while (!done) {
+        const { value, done: d } = await reader.read()
+        done = d
+        if (value) {
+          const chunk = decoder.decode(value)
+          setMessages(prev => {
+            const updated = [...prev]
+            updated[updated.length - 1] = {
+              role: 'assistant',
+              content: updated[updated.length - 1].content + chunk,
+            }
+            return updated
+          })
+        }
+      }
+    } catch {
+      setError('Network error — try again')
+    } finally {
+      setStreaming(false)
+    }
   }
 
   return (
@@ -87,6 +97,10 @@ export function ChatSidebar() {
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
+
+      {error && (
+        <p className="px-3 py-1 text-xs text-destructive border-t">{error}</p>
+      )}
 
       <form onSubmit={sendMessage} className="p-3 border-t flex gap-2">
         <Input
