@@ -13,17 +13,26 @@ export function ResumeEditor({ jobId, onClose }: Props) {
   const [changes, setChanges] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [error, setError] = useState('')
 
   async function loadTailored() {
     setLoading(true)
-    const res = await fetch(`/api/jobs/${jobId}/tailor`, { method: 'POST' })
-    if (res.ok) {
-      const data = await res.json()
-      setTailored(data.tailored_text)
-      setChanges(data.changes)
-      setLoaded(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/jobs/${jobId}/tailor`, { method: 'POST' })
+      if (res.ok) {
+        const data = await res.json()
+        setTailored(data.tailored_text)
+        setChanges(data.changes)
+        setLoaded(true)
+      } else {
+        setError('Failed to tailor resume — try again')
+      }
+    } catch {
+      setError('Network error — try again')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   function copyToClipboard() {
@@ -33,9 +42,12 @@ export function ResumeEditor({ jobId, onClose }: Props) {
   return (
     <div className="space-y-4">
       {!loaded ? (
-        <Button onClick={loadTailored} disabled={loading} className="w-full">
-          {loading ? 'Tailoring resume…' : 'Tailor Resume for This Job'}
-        </Button>
+        <>
+          <Button onClick={loadTailored} disabled={loading} className="w-full">
+            {loading ? 'Tailoring resume…' : 'Tailor Resume for This Job'}
+          </Button>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </>
       ) : (
         <>
           <div className="space-y-2">
