@@ -1,14 +1,21 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { Preferences } from '@/lib/supabase/types'
 
-function client() {
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+// Lazy singleton — created once on first use, reuses HTTP connection pool across requests
+let _anthropic: Anthropic | null = null
+function getClient() {
+  if (!_anthropic) _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  return _anthropic
 }
 
 function parseJSON<T>(text: string): T {
-  // Strip markdown code fences if present
-  const cleaned = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()
-  return JSON.parse(cleaned)
+  // Strip markdown code fences (handles leading whitespace too)
+  const cleaned = text.replace(/^\s*```(?:json)?\s*\n?/, '').replace(/\n?\s*```\s*$/, '').trim()
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    throw new Error(`Claude returned non-JSON response: ${cleaned.slice(0, 200)}`)
+  }
 }
 
 // ─── Profile Extraction ──────────────────────────────────────────────────────
@@ -21,8 +28,7 @@ export type ExtractedProfile = {
 }
 
 export async function extractProfile(resumeText: string): Promise<ExtractedProfile> {
-  const anthropic = client()
-  const response = await anthropic.messages.create({
+  const response = await getClient().messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     messages: [{
@@ -58,13 +64,22 @@ export type ScoredJob = {
 
 export async function searchJobs(params: {
   resumeText: string
-  preferences: Preferences
+  preferences: Partial<Preferences>
   rawSearchResults: SearchResult[]
 }): Promise<ScoredJob[]> {
   const { resumeText, preferences, rawSearchResults } = params
-  const anthropic = client()
 
-  const response = await anthropic.messages.create({
+  const prefSummary = [
+    preferences.role && `role=${preferences.role}`,
+    preferences.location && `location=${preferences.location}`,
+    (preferences.salary_min || preferences.salary_max) &&
+      `salary=${preferences.salary_min ?? '?'}-${preferences.salary_max ?? '?'}`,
+    preferences.remote && `remote=${preferences.remote}`,
+  ]
+    .filter(Boolean)
+    .join(', ')
+
+  const response = await getClient().messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     messages: [{
@@ -79,7 +94,7 @@ Only include jobs with match_score >= 50. Sort by match_score descending.
 Candidate Resume:
 ${resumeText}
 
-Candidate Preferences: role=${preferences.role}, location=${preferences.location}, salary=${preferences.salary_min}-${preferences.salary_max}, remote=${preferences.remote}
+Candidate Preferences: ${prefSummary || 'not specified'}
 
 Search Results:
 ${rawSearchResults.map((r, i) => `${i + 1}. ${r.title}\nURL: ${r.url}\nSnippet: ${r.snippet}`).join('\n\n')}`,
@@ -87,7 +102,8 @@ ${rawSearchResults.map((r, i) => `${i + 1}. ${r.title}\nURL: ${r.url}\nSnippet: 
   })
 
   const text = response.content[0].type === 'text' ? response.content[0].text : '[]'
-  return parseJSON<ScoredJob[]>(text)
+  const result = parseJSON<ScoredJob[]>(text)
+  return Array.isArray(result) ? result : []
 }
 
 // ─── Resume Tailoring ─────────────────────────────────────────────────────────
@@ -102,9 +118,8 @@ export async function tailorResume(params: {
   jobDescription: string
 }): Promise<TailoredResume> {
   const { originalResume, jobDescription } = params
-  const anthropic = client()
 
-  const response = await anthropic.messages.create({
+  const response = await getClient().messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     messages: [{
@@ -137,8 +152,7 @@ export async function* streamChat(params: {
   messages: ChatMessage[]
   context: string
 }): AsyncGenerator<string> {
-  const anthropic = client()
-  const stream = anthropic.messages.stream({
+  const stream = getClient().messages.stream({
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     system: `You are a job search assistant. Help the user with their job applications.
@@ -146,9 +160,14 @@ Context about the user: ${params.context}`,
     messages: params.messages,
   })
 
-  for await (const chunk of stream) {
-    if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-      yield chunk.delta.text
+  try {
+    for await (const chunk of stream) {
+      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+        yield chunk.delta.text
+      }
     }
+  } catch (err) {
+    // Re-throw as typed error so the API route can handle it cleanly
+    throw new Error(`Stream interrupted: ${(err as Error).message}`)
   }
 }
