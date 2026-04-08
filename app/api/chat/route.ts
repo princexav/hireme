@@ -6,9 +6,16 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
 
-  const { messages, context } = await request.json() as {
-    messages: ChatMessage[]
-    context: string
+  let messages: ChatMessage[], context: string
+  try {
+    const body = await request.json()
+    if (!Array.isArray(body.messages) || body.messages.length === 0) {
+      return new Response('messages must be a non-empty array', { status: 400 })
+    }
+    messages = body.messages
+    context = typeof body.context === 'string' ? body.context : ''
+  } catch {
+    return new Response('Invalid JSON', { status: 400 })
   }
 
   const encoder = new TextEncoder()

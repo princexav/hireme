@@ -18,9 +18,8 @@ export async function POST(request: Request) {
       user_id: user.id,
       raw_resume_text: resumeText,
       extracted_skills: profile.skills,
-      preferences: {},
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
+    }, { onConflict: 'user_id', ignoreDuplicates: false })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
