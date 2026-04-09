@@ -85,6 +85,7 @@ export default function OnboardingPage() {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
+              aria-label={resumeText ? 'Resume loaded, click to change' : 'Upload resume file'}
               className={`w-full border-2 border-dashed rounded-xl p-10 text-center transition-colors
                 ${resumeText
                   ? 'border-[#16a34a] bg-[#f0fdf4]'
@@ -97,14 +98,14 @@ export default function OnboardingPage() {
               <p className="text-xs text-[#64748b]">
                 {resumeText ? '' : 'PDF, DOCX, or TXT · up to 10MB'}
               </p>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".pdf,.doc,.docx,.txt"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
             </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.txt"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
 
             {error && <p className="text-sm text-red-500">{error}</p>}
 
