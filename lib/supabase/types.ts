@@ -1,4 +1,17 @@
-export type JobStatus = 'saved' | 'queued' | 'applied' | 'interview' | 'offer' | 'rejected'
+// 'suggested' = auto-found by search, not yet acted on (safe to replace on re-search)
+// 'saved'     = manually saved by user (preserved across re-searches)
+// 'queued'    = auto-queued for application (match_score >= 70)
+export type JobStatus = 'suggested' | 'saved' | 'queued' | 'applied' | 'interview' | 'offer' | 'rejected'
+
+export const STATUS_RANK: Record<JobStatus, number> = {
+  suggested:  1,
+  queued:     2,
+  saved:      3,
+  applied:    4,
+  interview:  5,
+  offer:      6,
+  rejected:  100,
+}
 
 export type Preferences = {
   role: string
@@ -21,12 +34,16 @@ export type Job = {
   user_id: string
   title: string
   company: string
+  location: string | null
   url: string
   jd_text: string
   match_score: number
   match_reasons: string[]
   status: JobStatus
   notes: string
+  salary_min: number | null
+  salary_max: number | null
+  applied_at: string | null
   created_at: string
 }
 
