@@ -43,10 +43,7 @@ describe('searchJobs', () => {
     mockCreate.mockResolvedValue({
       content: [{ type: 'text', text: JSON.stringify([
         {
-          title: 'Frontend Engineer',
-          company: 'Acme Corp',
-          url: 'https://example.com/job/1',
-          jd_text: 'We need a React developer',
+          index: 0,
           match_score: 82,
           match_reasons: ['Strong React experience', 'TypeScript match', 'Remote-friendly'],
         },
@@ -54,9 +51,9 @@ describe('searchJobs', () => {
     })
 
     const jobs = await searchJobs({
-      resumeText: 'React developer with TypeScript',
+      extractedSkills: ['React', 'TypeScript'],
       preferences: { role: 'Frontend Engineer', location: 'Lagos', salary_min: 50000, salary_max: 120000, remote: 'remote' },
-      rawSearchResults: [{ title: 'Frontend Engineer at Acme', url: 'https://example.com/job/1', snippet: 'React developer needed' }],
+      rawSearchResults: [{ title: 'Frontend Engineer at Acme', url: 'https://example.com/job/1', snippet: 'React developer needed', company: 'Acme', location: 'Lagos' }],
     })
 
     expect(jobs).toHaveLength(1)

@@ -51,23 +51,37 @@ export type SearchResult = {
   title: string
   url: string
   snippet: string
+  company: string
+  location: string
+  salary_min?: number
+  salary_max?: number
 }
 
 export type ScoredJob = {
   title: string
   company: string
+  location: string
   url: string
   jd_text: string
   match_score: number
   match_reasons: string[]
+  salary_min?: number
+  salary_max?: number
+}
+
+type JobScore = {
+  index: number
+  match_score: number
+  match_reasons: [string, string, string]
 }
 
 export async function searchJobs(params: {
-  resumeText: string
+  extractedSkills: string[]
   preferences: Partial<Preferences>
   rawSearchResults: SearchResult[]
 }): Promise<ScoredJob[]> {
-  const { resumeText, preferences, rawSearchResults } = params
+  const { extractedSkills, preferences, rawSearchResults } = params
+  if (rawSearchResults.length === 0) return []
 
   const prefSummary = [
     preferences.role && `role=${preferences.role}`,
@@ -75,35 +89,64 @@ export async function searchJobs(params: {
     (preferences.salary_min || preferences.salary_max) &&
       `salary=${preferences.salary_min ?? '?'}-${preferences.salary_max ?? '?'}`,
     preferences.remote && `remote=${preferences.remote}`,
-  ]
-    .filter(Boolean)
-    .join(', ')
+  ].filter(Boolean).join(', ')
+
+  // Cap at 20 jobs, trim snippets to 200 chars to keep prompt fast
+  const jobsToScore = rawSearchResults.slice(0, 20)
+  const jobList = jobsToScore
+    .map((r, i) => `${i}. ${r.title} at ${r.company} (${r.location})\n${r.snippet.slice(0, 200)}`)
+    .join('\n\n')
 
   const response = await getClient().messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 2048,
     messages: [{
       role: 'user',
-      content: `You are a job matching assistant. Given a candidate's resume and job search results, score each job for fit (0-100) and explain why in 3 bullet points.
+      content: `Score each job for fit against the candidate's skills and preferences.
 
-Return ONLY a JSON array matching this shape:
-[{"title": string, "company": string, "url": string, "jd_text": string, "match_score": number, "match_reasons": string[3]}]
+First, classify each job into a subtype based on the candidate's target role. Examples:
+- role="AI Engineer" → subtypes: platform / agentic / mlops / generalist
+- role="Backend Engineer" → subtypes: API / platform / distributed-systems / generalist
+- role="Product Manager" → subtypes: growth / platform / technical-pm / generalist
+Use the detected subtype to weight your scoring — emphasize the skills and responsibilities most relevant to that subtype when assigning match_score.
 
-Only include jobs with match_score >= 50. Sort by match_score descending.
+Return ONLY a JSON array for jobs with match_score >= 50, sorted descending:
+[{"index": number, "match_score": number, "match_reasons": [string, string, string]}]
 
-Candidate Resume:
-${resumeText}
+Rules:
+- match_score is 0-100. Only include jobs scoring >= 50.
+- Each match_reason is one specific sentence explaining fit.
+- If a job snippet is too short or generic to determine fit, assign match_score 0 (exclude it).
+- Do not hallucinate requirements or company culture not present in the snippet.
 
 Candidate Preferences: ${prefSummary || 'not specified'}
+Candidate Skills: ${extractedSkills.join(', ')}
 
-Search Results:
-${rawSearchResults.map((r, i) => `${i + 1}. ${r.title}\nURL: ${r.url}\nSnippet: ${r.snippet}`).join('\n\n')}`,
+Jobs:
+${jobList}`,
     }],
   })
 
   const text = response.content[0].type === 'text' ? response.content[0].text : '[]'
-  const result = parseJSON<ScoredJob[]>(text)
-  return Array.isArray(result) ? result : []
+  const scores = parseJSON<JobScore[]>(text)
+  if (!Array.isArray(scores)) return []
+
+  return scores
+    .filter(s => s.index >= 0 && s.index < rawSearchResults.length)
+    .map(s => {
+      const src = rawSearchResults[s.index]
+      return {
+        title: src.title,
+        company: src.company,
+        location: src.location,
+        url: src.url,
+        jd_text: src.snippet,
+        match_score: s.match_score,
+        match_reasons: s.match_reasons,
+        salary_min: src.salary_min,
+        salary_max: src.salary_max,
+      }
+    })
 }
 
 // ─── Resume Tailoring ─────────────────────────────────────────────────────────
