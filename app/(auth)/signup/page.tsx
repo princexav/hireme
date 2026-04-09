@@ -58,13 +58,13 @@ export default function SignupPage() {
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-sm font-medium text-[#0f172a]">Email</label>
             <Input id="email" type="email" value={email}
-              onChange={e => setEmail(e.target.value)} required
+              onChange={e => setEmail(e.target.value)} required autoComplete="email"
               className="border-[#e2e8f0] h-10" />
           </div>
           <div className="space-y-1.5">
             <label htmlFor="password" className="text-sm font-medium text-[#0f172a]">Password <span className="text-[#94a3b8] font-normal">(min 8 chars)</span></label>
             <Input id="password" type="password" value={password}
-              onChange={e => setPassword(e.target.value)} minLength={8} required
+              onChange={e => setPassword(e.target.value)} minLength={8} required autoComplete="new-password"
               className="border-[#e2e8f0] h-10" />
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
