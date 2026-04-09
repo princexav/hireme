@@ -7,7 +7,10 @@ import { useProfile } from '@/hooks/useProfile'
 import type { ChatMessage } from '@/lib/claude'
 
 export function ChatSidebar() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('chat-open') === 'true'
+  })
   const [messages, setMessages] = useState<ChatMessage[]>([{
     role: 'assistant',
     content: 'Hi! I can help with your job search. Try: "Why is this job a good fit?" or "Help me prep for an interview."',
@@ -17,12 +20,6 @@ export function ChatSidebar() {
   const [error, setError] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const { profile } = useProfile()
-
-  // Restore open state from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('chat-open')
-    if (saved === 'true') setOpen(true)
-  }, [])
 
   useEffect(() => {
     localStorage.setItem('chat-open', String(open))
