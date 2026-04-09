@@ -70,6 +70,7 @@ export function QueueCard({ job, onSend, onSkip }: Props) {
               Edit Resume
             </Button>
             <button
+              type="button"
               onClick={handleSkip}
               disabled={skipping}
               className="text-sm text-[#94a3b8] hover:text-[#64748b] px-2 transition-colors"

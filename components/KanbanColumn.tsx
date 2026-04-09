@@ -16,6 +16,11 @@ const COLUMN_COLORS: Partial<Record<JobStatus, string>> = {
   rejected: 'bg-[#fef2f2] text-[#ef4444]',
 }
 
+const NEXT: Partial<Record<JobStatus, JobStatus>> = {
+  applied: 'interview',
+  interview: 'offer',
+}
+
 type Props = {
   status: JobStatus
   jobs: Job[]
@@ -23,10 +28,6 @@ type Props = {
 }
 
 export function KanbanColumn({ status, jobs, onStatusChange }: Props) {
-  const NEXT: Partial<Record<JobStatus, JobStatus>> = {
-    applied: 'interview',
-    interview: 'offer',
-  }
   const nextStatus = NEXT[status]
   const colorClass = COLUMN_COLORS[status] ?? 'bg-[#f1f5f9] text-[#64748b]'
 
@@ -52,12 +53,14 @@ export function KanbanColumn({ status, jobs, onStatusChange }: Props) {
           <div className="flex gap-2 flex-wrap">
             {nextStatus && (
               <button
+                type="button"
                 onClick={() => onStatusChange(job.id, nextStatus)}
                 className="text-xs font-medium text-[#6366f1] hover:text-[#4f46e5] transition-colors">
                 Move to {COLUMN_LABELS[nextStatus]} →
               </button>
             )}
             <button
+              type="button"
               onClick={() => onStatusChange(job.id, 'rejected')}
               className="text-xs text-[#94a3b8] hover:text-[#ef4444] transition-colors">
               Reject
