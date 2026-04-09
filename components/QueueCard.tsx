@@ -32,36 +32,50 @@ export function QueueCard({ job, onSend, onSkip }: Props) {
 
   return (
     <>
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-start justify-between">
+      <Card className="border-[#e2e8f0] rounded-xl">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-3 mb-3">
             <div>
-              <h3 className="font-semibold">{job.title}</h3>
-              <p className="text-sm text-muted-foreground">{job.company}</p>
+              <h3 className="font-bold text-[#0f172a]">{job.title}</h3>
+              <p className="text-sm text-[#64748b]">{job.company}</p>
             </div>
-            <span className="text-sm font-bold text-green-600 shrink-0">
+            <span className="shrink-0 text-lg font-black text-[#16a34a]">
               {job.match_score}% match
             </span>
           </div>
 
-          <ul className="space-y-1">
+          <ul className="space-y-1.5 mb-4">
             {job.match_reasons.map((r, i) => (
-              <li key={i} className="text-sm flex gap-2">
-                <span className="text-green-500 shrink-0">✓</span> {r}
+              <li key={i} className="text-sm text-[#64748b] flex gap-2 items-start">
+                <span className="text-[#16a34a] shrink-0 mt-px">✓</span> {r}
               </li>
             ))}
           </ul>
 
-          <div className="flex gap-2 pt-1">
-            <Button size="sm" onClick={handleSend} disabled={sending} className="flex-1">
-              {sending ? 'Opening…' : 'Send'}
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={handleSend}
+              disabled={sending}
+              className="flex-1 bg-[#0f172a] hover:bg-[#1e293b] text-white"
+            >
+              {sending ? 'Opening…' : 'Send Application →'}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setSheetOpen(true)} className="flex-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSheetOpen(true)}
+              className="border-[#e2e8f0] text-[#0f172a]"
+            >
               Edit Resume
             </Button>
-            <Button size="sm" variant="ghost" onClick={handleSkip} disabled={skipping}>
+            <button
+              onClick={handleSkip}
+              disabled={skipping}
+              className="text-sm text-[#94a3b8] hover:text-[#64748b] px-2 transition-colors"
+            >
               {skipping ? '…' : 'Skip'}
-            </Button>
+            </button>
           </div>
         </CardContent>
       </Card>
@@ -69,7 +83,9 @@ export function QueueCard({ job, onSend, onSkip }: Props) {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Tailored Resume — {job.title} at {job.company}</SheetTitle>
+            <SheetTitle className="text-[#0f172a]">
+              Tailored Resume — {job.title} at {job.company}
+            </SheetTitle>
           </SheetHeader>
           <div className="mt-4">
             <ResumeEditor jobId={job.id} onClose={() => setSheetOpen(false)} />
