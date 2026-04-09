@@ -20,14 +20,20 @@ export function QueueCard({ job, onSend, onSkip }: Props) {
   async function handleSend() {
     setSending(true)
     window.open?.(job.url, '_blank')
-    await onSend(job.id)
-    setSending(false)
+    try {
+      await onSend(job.id)
+    } finally {
+      setSending(false)
+    }
   }
 
   async function handleSkip() {
     setSkipping(true)
-    await onSkip(job.id)
-    setSkipping(false)
+    try {
+      await onSkip(job.id)
+    } finally {
+      setSkipping(false)
+    }
   }
 
   return (

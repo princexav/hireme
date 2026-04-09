@@ -8,10 +8,10 @@ export default function QueuePage() {
   if (isLoading) return <div className="p-6 text-muted-foreground">Loading…</div>
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Apply Queue</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-2xl font-bold text-[#0f172a] tracking-tight">Apply Queue</h1>
+        <p className="text-sm text-[#64748b]">
           {queue.length} jobs ready · resumes tailored · review and send in 30 seconds each
         </p>
       </div>

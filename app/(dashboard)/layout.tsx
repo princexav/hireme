@@ -51,7 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               {item.href === '/queue' && queueCount > 0 && (
                 <span className="absolute top-1 right-1 bg-[#6366f1] text-white text-[9px] font-bold
                   rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">
-                  {queueCount}
+                  {queueCount > 99 ? '99+' : queueCount}
                 </span>
               )}
             </Link>
