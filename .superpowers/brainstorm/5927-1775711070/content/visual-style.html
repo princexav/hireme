@@ -1,0 +1,76 @@
+<h2>Which visual style fits HireMe?</h2>
+<p class="subtitle">Pick the direction that feels right before we design the full layout</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="clean" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc;padding:16px;font-family:system-ui">
+      <div style="background:#0f172a;color:#f8fafc;padding:8px 14px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.05em;display:inline-block;margin-bottom:12px">HireMe</div>
+      <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:#0f172a;margin-bottom:4px">Frontend Engineer · Vercel</div>
+        <div style="font-size:10px;color:#64748b;margin-bottom:8px">Remote · 92% match</div>
+        <div style="background:#0f172a;color:white;font-size:10px;padding:5px 10px;border-radius:4px;display:inline-block">Apply →</div>
+      </div>
+      <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:#0f172a;margin-bottom:4px">Product Designer · Linear</div>
+        <div style="font-size:10px;color:#64748b;margin-bottom:8px">NYC · 78% match</div>
+        <div style="background:#0f172a;color:white;font-size:10px;padding:5px 10px;border-radius:4px;display:inline-block">Apply →</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Clean & Professional</h3>
+      <p>Dark navy accent, white cards, crisp borders. Serious, LinkedIn-like energy. Feels trusted.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="vibrant" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);padding:16px;font-family:system-ui">
+      <div style="background:white;color:#6366f1;padding:8px 14px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.05em;display:inline-block;margin-bottom:12px">HireMe ✦</div>
+      <div style="background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:14px;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:white;margin-bottom:4px">Frontend Engineer · Vercel</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.7);margin-bottom:8px">Remote · 92% match</div>
+        <div style="background:white;color:#6366f1;font-size:10px;padding:5px 10px;border-radius:20px;display:inline-block;font-weight:600">Apply →</div>
+      </div>
+      <div style="background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:white;margin-bottom:4px">Product Designer · Linear</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.7);margin-bottom:8px">NYC · 78% match</div>
+        <div style="background:white;color:#6366f1;font-size:10px;padding:5px 10px;border-radius:20px;display:inline-block;font-weight:600">Apply →</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Vibrant & Modern</h3>
+      <p>Indigo-purple gradient, glassmorphism cards, rounded pill buttons. Bold, startup energy.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="minimal" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fafafa;padding:16px;font-family:system-ui;border-bottom:1px solid #e5e5e5">
+      <div style="font-size:13px;font-weight:800;color:#111;letter-spacing:-.03em;margin-bottom:14px">hireme</div>
+      <div style="padding:12px 0;border-bottom:1px solid #e5e5e5;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:#111;margin-bottom:2px">Frontend Engineer</div>
+            <div style="font-size:10px;color:#888">Vercel · Remote</div>
+          </div>
+          <div style="font-size:10px;font-weight:700;color:#18a449">92%</div>
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:#555;border:1px solid #111;padding:4px 10px;border-radius:3px;display:inline-block;font-weight:500">Apply</div>
+      </div>
+      <div style="padding:12px 0">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:#111;margin-bottom:2px">Product Designer</div>
+            <div style="font-size:10px;color:#888">Linear · NYC</div>
+          </div>
+          <div style="font-size:10px;font-weight:700;color:#18a449">78%</div>
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:#555;border:1px solid #111;padding:4px 10px;border-radius:3px;display:inline-block;font-weight:500">Apply</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Minimal & Editorial</h3>
+      <p>Off-white, tight typography, hairline borders. Notion/Linear aesthetic. Fast and focused.</p>
+    </div>
+  </div>
+
+</div>

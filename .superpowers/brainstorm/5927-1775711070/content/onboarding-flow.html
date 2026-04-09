@@ -1,0 +1,85 @@
+<h2>New user flow — first thing they see</h2>
+<p class="subtitle">After signup, where does the user go and what do they see? Pick the approach that feels clearest.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="full-page" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:system-ui;background:#f8fafc;padding:0;overflow:hidden">
+      <!-- Icon nav -->
+      <div style="display:flex;height:150px">
+        <div style="width:44px;background:#0f172a;display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:10px">
+          <div style="color:white;font-weight:800;font-size:10px">H</div>
+          <div style="background:rgba(255,255,255,.1);border-radius:4px;padding:5px;font-size:11px">🔍</div>
+          <div style="border-radius:4px;padding:5px;font-size:11px;opacity:.4">📋</div>
+          <div style="border-radius:4px;padding:5px;font-size:11px;opacity:.4">📊</div>
+          <div style="margin-top:auto;border-radius:4px;padding:5px;font-size:11px;opacity:.4">📄</div>
+        </div>
+        <!-- Centered onboarding card -->
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:12px">
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:16px;width:100%;max-width:240px;text-align:center">
+            <div style="font-size:22px;margin-bottom:6px">📄</div>
+            <div style="font-size:11px;font-weight:700;color:#0f172a;margin-bottom:3px">Upload your resume</div>
+            <div style="font-size:9px;color:#64748b;margin-bottom:10px">Step 1 of 2 — takes 30 seconds</div>
+            <div style="border:2px dashed #cbd5e1;border-radius:6px;padding:12px;cursor:pointer;margin-bottom:8px">
+              <div style="font-size:9px;color:#64748b">Drop PDF or DOCX here<br><span style="color:#0f172a;font-weight:600;text-decoration:underline">or click to browse</span></div>
+            </div>
+            <div style="background:#0f172a;color:white;font-size:9px;padding:6px;border-radius:5px;font-weight:600">Continue →</div>
+          </div>
+        </div>
+        <!-- Chat icon strip -->
+        <div style="width:32px;background:white;border-left:1px solid #e2e8f0;display:flex;flex-direction:column;align-items:center;padding-top:10px;gap:4px">
+          <div style="font-size:13px">💬</div>
+          <div style="font-size:7px;color:#94a3b8;writing-mode:vertical-lr;transform:rotate(180deg)">AI Chat</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Centered Onboarding Card</h3>
+      <p>After signup, user sees a clean centered card inside the app shell. Clear step indicator. Full app nav is visible but other pages are locked until setup is done.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="banner" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:system-ui;background:#f8fafc;padding:0;overflow:hidden">
+      <div style="display:flex;height:150px">
+        <div style="width:44px;background:#0f172a;display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:10px">
+          <div style="color:white;font-weight:800;font-size:10px">H</div>
+          <div style="background:rgba(255,255,255,.15);border-radius:4px;padding:5px;font-size:11px">🔍</div>
+          <div style="border-radius:4px;padding:5px;font-size:11px;opacity:.4">📋</div>
+          <div style="border-radius:4px;padding:5px;font-size:11px;opacity:.4">📊</div>
+          <div style="margin-top:auto;border-radius:4px;padding:5px;font-size:11px">📄</div>
+        </div>
+        <div style="flex:1;padding:10px;overflow:hidden">
+          <!-- Setup banner at top of search page -->
+          <div style="background:#0f172a;border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="color:white;font-size:10px;font-weight:700;margin-bottom:2px">Complete setup to find jobs</div>
+              <div style="color:rgba(255,255,255,.6);font-size:8px">Upload resume → Set preferences → Start searching</div>
+            </div>
+            <div style="background:white;color:#0f172a;font-size:9px;padding:5px 10px;border-radius:4px;font-weight:600;white-space:nowrap">Start Setup →</div>
+          </div>
+          <!-- Blurred/disabled content behind -->
+          <div style="opacity:.3">
+            <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:8px;margin-bottom:5px">
+              <div style="font-size:10px;font-weight:600;color:#0f172a">Frontend Engineer · Vercel</div>
+              <div style="font-size:9px;color:#64748b">Remote · 92% match</div>
+            </div>
+            <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
+              <div style="font-size:10px;font-weight:600;color:#0f172a">Product Designer · Linear</div>
+              <div style="font-size:9px;color:#64748b">NYC · 78% match</div>
+            </div>
+          </div>
+        </div>
+        <div style="width:32px;background:white;border-left:1px solid #e2e8f0;display:flex;flex-direction:column;align-items:center;padding-top:10px;gap:4px">
+          <div style="font-size:13px">💬</div>
+          <div style="font-size:7px;color:#94a3b8;writing-mode:vertical-lr;transform:rotate(180deg)">AI Chat</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Setup Banner on Search Page</h3>
+      <p>Land directly on /search with a prominent dark banner. Dimmed placeholder content shows what they're unlocking. "Start Setup →" takes them to onboarding.</p>
+    </div>
+  </div>
+
+</div>
