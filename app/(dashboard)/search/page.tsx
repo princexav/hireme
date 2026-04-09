@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button'
 
 export default function SearchPage() {
   const { profile, isLoading: profileLoading } = useProfile()
-  const { jobs, mutate } = useJobs()
+  const { jobs, mutate, isLoading: jobsLoading } = useJobs()
   const [searching, setSearching] = useState(false)
   const [error, setError] = useState('')
 
-  const recentJobs = jobs.filter(j =>
-    Date.now() - new Date(j.created_at).getTime() < 1000 * 60 * 60 * 24
-  )
+  const recentJobs = jobs
+    .filter(j => Date.now() - new Date(j.created_at).getTime() < 1000 * 60 * 60 * 24)
+    .sort((a, b) => b.match_score - a.match_score)
 
   async function handleSearch() {
     if (!profile) return
@@ -36,7 +36,7 @@ export default function SearchPage() {
     }
   }
 
-  if (profileLoading) {
+  if (profileLoading || jobsLoading) {
     return <div className="text-[#64748b] text-sm">Loading…</div>
   }
 
@@ -49,11 +49,9 @@ export default function SearchPage() {
             <h2 className="text-white font-bold text-lg mb-1">Get started with HireMe</h2>
             <p className="text-white/60 text-sm">Upload your resume and set your preferences to find AI-matched jobs in seconds.</p>
           </div>
-          <Link href="/onboarding">
-            <Button className="bg-white text-[#0f172a] hover:bg-[#f1f5f9] font-semibold shrink-0">
-              Get Started →
-            </Button>
-          </Link>
+          <Button asChild className="bg-white text-[#0f172a] hover:bg-[#f1f5f9] font-semibold shrink-0">
+            <Link href="/onboarding">Get Started →</Link>
+          </Button>
         </div>
         {/* Placeholder cards */}
         <div className="space-y-3 opacity-30 pointer-events-none select-none">
@@ -100,7 +98,7 @@ export default function SearchPage() {
           <p className="text-sm text-[#64748b]">
             {recentJobs.length} jobs found · <span className="text-[#16a34a] font-medium">{recentJobs.filter(j => j.match_score >= 70).length} added to queue</span>
           </p>
-          {recentJobs.sort((a, b) => b.match_score - a.match_score).map(job => (
+          {recentJobs.map(job => (
             <JobCard key={job.id} job={job} />
           ))}
         </div>
