@@ -219,10 +219,10 @@ describe('sortJSearchFirst', () => {
   it('places jsearch results before adzuna results', async () => {
     const { sortJSearchFirst } = await import('@/lib/jobs-pipeline')
     const mixed = [
-      { company: 'A', title: 'Engineer', snippet: 'a', _source: 'adzuna' as const },
-      { company: 'B', title: 'Scientist', snippet: 'b', _source: 'jsearch' as const },
-      { company: 'C', title: 'Analyst', snippet: 'c', _source: 'adzuna' as const },
-      { company: 'D', title: 'Architect', snippet: 'd', _source: 'jsearch' as const },
+      { company: 'A', title: 'Engineer', snippet: 'a', url: '', location: '', _source: 'adzuna' as const },
+      { company: 'B', title: 'Scientist', snippet: 'b', url: '', location: '', _source: 'jsearch' as const },
+      { company: 'C', title: 'Analyst', snippet: 'c', url: '', location: '', _source: 'adzuna' as const },
+      { company: 'D', title: 'Architect', snippet: 'd', url: '', location: '', _source: 'jsearch' as const },
     ]
     const sorted = sortJSearchFirst(mixed)
     expect(sorted[0]._source).toBe('jsearch')
@@ -234,10 +234,10 @@ describe('sortJSearchFirst', () => {
   it('preserves relative order within each source group', async () => {
     const { sortJSearchFirst } = await import('@/lib/jobs-pipeline')
     const mixed = [
-      { company: 'A', title: 'First Adzuna',   snippet: 'a', _source: 'adzuna'  as const },
-      { company: 'B', title: 'First JSearch',  snippet: 'b', _source: 'jsearch' as const },
-      { company: 'C', title: 'Second Adzuna',  snippet: 'c', _source: 'adzuna'  as const },
-      { company: 'D', title: 'Second JSearch', snippet: 'd', _source: 'jsearch' as const },
+      { company: 'A', title: 'First Adzuna',   snippet: 'a', url: '', location: '', _source: 'adzuna'  as const },
+      { company: 'B', title: 'First JSearch',  snippet: 'b', url: '', location: '', _source: 'jsearch' as const },
+      { company: 'C', title: 'Second Adzuna',  snippet: 'c', url: '', location: '', _source: 'adzuna'  as const },
+      { company: 'D', title: 'Second JSearch', snippet: 'd', url: '', location: '', _source: 'jsearch' as const },
     ]
     const sorted = sortJSearchFirst(mixed)
     expect(sorted[0].title).toBe('First JSearch')
@@ -249,8 +249,8 @@ describe('sortJSearchFirst', () => {
   it('handles all-jsearch input unchanged in order', async () => {
     const { sortJSearchFirst } = await import('@/lib/jobs-pipeline')
     const jobs = [
-      { company: 'A', title: 'One', snippet: 'a', _source: 'jsearch' as const },
-      { company: 'B', title: 'Two', snippet: 'b', _source: 'jsearch' as const },
+      { company: 'A', title: 'One', snippet: 'a', url: '', location: '', _source: 'jsearch' as const },
+      { company: 'B', title: 'Two', snippet: 'b', url: '', location: '', _source: 'jsearch' as const },
     ]
     const sorted = sortJSearchFirst(jobs)
     expect(sorted[0].title).toBe('One')
