@@ -148,6 +148,32 @@ ${jobList}`,
     })
 }
 
+// ─── Query Expansion ──────────────────────────────────────────────────────────
+
+export async function expandQueryVariants(role: string): Promise<string[]> {
+  try {
+    const response = await getClient().messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 256,
+      messages: [{
+        role: 'user',
+        content: `Return a JSON array of 5-8 job title variants for a candidate searching for "${role}" roles.
+Include the exact original title as the first element.
+Include semantically related titles that use different terminology but describe the same or adjacent work.
+Return ONLY the JSON array, no prose.
+Example for "AI Engineer": ["AI Engineer","Machine Learning Engineer","MLOps Engineer","Applied AI Engineer","Generative AI Engineer","AI Platform Engineer","Applied Scientist"]`,
+      }],
+    })
+
+    const text = response.content[0].type === 'text' ? response.content[0].text : ''
+    const variants = parseJSON<string[]>(text)
+    if (!Array.isArray(variants) || variants.length === 0) return [role]
+    return variants
+  } catch {
+    return [role]
+  }
+}
+
 // ─── Resume Tailoring ─────────────────────────────────────────────────────────
 
 export type TailoredResume = {

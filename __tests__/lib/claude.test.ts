@@ -103,3 +103,51 @@ describe('tailorResume', () => {
     expect(result.tailored_score).toBeGreaterThan(result.original_score)
   })
 })
+
+describe('expandQueryVariants', () => {
+  it('returns an array of variants with the base role as first element', async () => {
+    mockCreate.mockResolvedValue({
+      content: [{ type: 'text', text: JSON.stringify([
+        'AI Engineer',
+        'Machine Learning Engineer',
+        'MLOps Engineer',
+        'Applied AI Engineer',
+        'Generative AI Engineer',
+      ]) }],
+    })
+
+    const { expandQueryVariants } = await import('@/lib/claude')
+    const variants = await expandQueryVariants('AI Engineer')
+    expect(variants[0]).toBe('AI Engineer')
+    expect(variants.length).toBeGreaterThanOrEqual(2)
+    expect(variants.every(v => typeof v === 'string')).toBe(true)
+  })
+
+  it('returns [role] when Claude returns invalid JSON', async () => {
+    mockCreate.mockResolvedValue({
+      content: [{ type: 'text', text: 'not json at all' }],
+    })
+
+    const { expandQueryVariants } = await import('@/lib/claude')
+    const variants = await expandQueryVariants('Data Engineer')
+    expect(variants).toEqual(['Data Engineer'])
+  })
+
+  it('returns [role] when Claude call throws', async () => {
+    mockCreate.mockRejectedValue(new Error('network error'))
+
+    const { expandQueryVariants } = await import('@/lib/claude')
+    const variants = await expandQueryVariants('Backend Engineer')
+    expect(variants).toEqual(['Backend Engineer'])
+  })
+
+  it('returns [role] when Claude returns an empty array', async () => {
+    mockCreate.mockResolvedValue({
+      content: [{ type: 'text', text: '[]' }],
+    })
+
+    const { expandQueryVariants } = await import('@/lib/claude')
+    const variants = await expandQueryVariants('Product Manager')
+    expect(variants).toEqual(['Product Manager'])
+  })
+})
