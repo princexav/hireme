@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Preferences, Job, JobStatus } from '@/lib/supabase/types'
 import { STATUS_RANK } from '@/lib/supabase/types'
 import type { SearchResult } from '@/lib/claude'
-import { searchJobs } from '@/lib/claude'
+import { searchJobs, expandQueryVariants } from '@/lib/claude'
 
 // ── Public types ───────────────────────────────────────────────────────────────
 
@@ -11,6 +11,17 @@ export type PipelineError = 'jsearch_auth' | 'jsearch_ratelimit' | 'jsearch_unav
 export type PipelineResult =
   | { ok: true;  jobs: Job[] }
   | { ok: false; error: PipelineError }
+
+// ── Internal types ─────────────────────────────────────────────────────────────
+
+type TaggedResult = SearchResult & { _source: 'jsearch' | 'adzuna' }
+
+export function sortJSearchFirst(jobs: TaggedResult[]): TaggedResult[] {
+  return [...jobs].sort((a, b) => {
+    if (a._source === b._source) return 0
+    return a._source === 'jsearch' ? -1 : 1
+  })
+}
 
 // ── JSearch fetch ──────────────────────────────────────────────────────────────
 
@@ -245,26 +256,40 @@ export async function processJobSearch(params: {
   const salaryMin  = preferences.salary_min  ?? 0
   const datePosted = preferences.date_posted ?? 'month'
 
-  // Step 1: Fetch from JSearch (4 pages in parallel)
-  const { results: rawResults, error: fetchError } = await fetchJSearchResults({
-    role, location, remote, datePosted, salaryMin,
-  })
-  if (fetchError) return { ok: false, error: fetchError }
+  // Step 0: Expand role into semantic variants (degrades to [role] on failure)
+  const variants = await expandQueryVariants(role)
+
+  // Step 1: Fetch JSearch (base query, 4 pages) + Adzuna (all variants, 1 page each) in parallel
+  const [jsearchResult, ...adzunaPages] = await Promise.all([
+    fetchJSearchResults({ role, location, remote, datePosted, salaryMin }),
+    ...variants.map(v => fetchAdzunaResults({ variant: v, location, remote, datePosted })),
+  ])
+
+  if (jsearchResult.error) return { ok: false, error: jsearchResult.error }
+
+  const tagged: TaggedResult[] = [
+    ...jsearchResult.results.map(r => ({ ...r, _source: 'jsearch' as const })),
+    ...adzunaPages.flat().map(r => ({ ...r, _source: 'adzuna' as const })),
+  ]
 
   // Step 2: Filter seen jobs (30-day suppression)
-  const seenUrls      = await fetchSeenUrls(userId, supabase)
-  const unseenResults = filterSeenJobs(rawResults, seenUrls)
+  const seenUrls     = await fetchSeenUrls(userId, supabase)
+  const unseenTagged = tagged.filter(j => !seenUrls.has(j.url))
 
   // Step 3: Deduplication — exact key first, then fuzzy company+title
   const exactSeen = new Set<string>()
-  const exactDeduped = unseenResults.filter(r => {
+  const exactDeduped = unseenTagged.filter(r => {
     const key = `${r.company.toLowerCase()}|${r.title.toLowerCase()}|${r.location.toLowerCase()}`
     if (exactSeen.has(key)) return false
     exactSeen.add(key)
     return true
   })
   const deduped = fuzzyDedup(exactDeduped)
-  const topResults = deduped.slice(0, 40)
+
+  // Sort JSearch (full JD) before Adzuna (snippets), then slice to Haiku output-token budget
+  const topResults: SearchResult[] = sortJSearchFirst(deduped)
+    .slice(0, 20)
+    .map(({ _source, ...r }) => r)
 
   if (topResults.length === 0) return { ok: true, jobs: [] }
 

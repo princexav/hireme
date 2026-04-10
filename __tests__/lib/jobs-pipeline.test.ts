@@ -214,3 +214,51 @@ describe('adzunaMaxDaysOld', () => {
     expect(adzunaMaxDaysOld('unknown')).toBe(30)
   })
 })
+
+describe('sortJSearchFirst', () => {
+  it('places jsearch results before adzuna results', async () => {
+    const { sortJSearchFirst } = await import('@/lib/jobs-pipeline')
+    const mixed = [
+      { company: 'A', title: 'Engineer', snippet: 'a', _source: 'adzuna' as const },
+      { company: 'B', title: 'Scientist', snippet: 'b', _source: 'jsearch' as const },
+      { company: 'C', title: 'Analyst', snippet: 'c', _source: 'adzuna' as const },
+      { company: 'D', title: 'Architect', snippet: 'd', _source: 'jsearch' as const },
+    ]
+    const sorted = sortJSearchFirst(mixed)
+    expect(sorted[0]._source).toBe('jsearch')
+    expect(sorted[1]._source).toBe('jsearch')
+    expect(sorted[2]._source).toBe('adzuna')
+    expect(sorted[3]._source).toBe('adzuna')
+  })
+
+  it('preserves relative order within each source group', async () => {
+    const { sortJSearchFirst } = await import('@/lib/jobs-pipeline')
+    const mixed = [
+      { company: 'A', title: 'First Adzuna',   snippet: 'a', _source: 'adzuna'  as const },
+      { company: 'B', title: 'First JSearch',  snippet: 'b', _source: 'jsearch' as const },
+      { company: 'C', title: 'Second Adzuna',  snippet: 'c', _source: 'adzuna'  as const },
+      { company: 'D', title: 'Second JSearch', snippet: 'd', _source: 'jsearch' as const },
+    ]
+    const sorted = sortJSearchFirst(mixed)
+    expect(sorted[0].title).toBe('First JSearch')
+    expect(sorted[1].title).toBe('Second JSearch')
+    expect(sorted[2].title).toBe('First Adzuna')
+    expect(sorted[3].title).toBe('Second Adzuna')
+  })
+
+  it('handles all-jsearch input unchanged in order', async () => {
+    const { sortJSearchFirst } = await import('@/lib/jobs-pipeline')
+    const jobs = [
+      { company: 'A', title: 'One', snippet: 'a', _source: 'jsearch' as const },
+      { company: 'B', title: 'Two', snippet: 'b', _source: 'jsearch' as const },
+    ]
+    const sorted = sortJSearchFirst(jobs)
+    expect(sorted[0].title).toBe('One')
+    expect(sorted[1].title).toBe('Two')
+  })
+
+  it('handles empty input', async () => {
+    const { sortJSearchFirst } = await import('@/lib/jobs-pipeline')
+    expect(sortJSearchFirst([])).toEqual([])
+  })
+})
