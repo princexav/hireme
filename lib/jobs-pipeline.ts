@@ -27,15 +27,18 @@ type JSearchJob = {
   job_max_salary?: number
 }
 
-async function fetchJSearchResults(
-  role: string,
-  location: string,
-  salaryMin?: number,
-): Promise<{ results: SearchResult[]; error: PipelineError | null }> {
+async function fetchJSearchResults(params: {
+  role: string
+  location: string
+  remote: string
+  datePosted: string
+  salaryMin?: number
+}): Promise<{ results: SearchResult[]; error: PipelineError | null }> {
+  const { role, location, remote, datePosted, salaryMin } = params
   const apiKey = process.env.JSEARCH_API_KEY
   if (!apiKey) return { results: [], error: null }
 
-  const isRemote = location.toLowerCase() === 'remote'
+  const isRemote = remote === 'remote' || location.toLowerCase() === 'remote'
   const query = isRemote ? `${role} remote` : `${role} in ${location}`
 
   const headers = {
@@ -43,22 +46,22 @@ async function fetchJSearchResults(
     'x-rapidapi-key': apiKey,
   }
 
-  const [r1, r2] = await Promise.all([
-    fetch(`https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&page=1&num_pages=1&country=us&date_posted=all`, { headers }),
-    fetch(`https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&page=2&num_pages=1&country=us&date_posted=all`, { headers }),
-  ])
+  const base = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&num_pages=1&country=us&date_posted=${datePosted}`
 
-  for (const r of [r1, r2]) {
+  const responses = await Promise.all([1, 2, 3, 4].map(page =>
+    fetch(`${base}&page=${page}`, { headers })
+  ))
+
+  for (const r of responses) {
     if (r.status === 401 || r.status === 403) return { results: [], error: 'jsearch_auth' }
     if (r.status === 429) return { results: [], error: 'jsearch_ratelimit' }
   }
 
-  const [d1, d2] = await Promise.all([
-    r1.ok ? r1.json().catch(() => ({ data: [] })) : { data: [] },
-    r2.ok ? r2.json().catch(() => ({ data: [] })) : { data: [] },
-  ])
+  const pages = await Promise.all(
+    responses.map(r => r.ok ? r.json().catch(() => ({ data: [] })) : { data: [] })
+  )
 
-  let raw: JSearchJob[] = [...(d1.data ?? []), ...(d2.data ?? [])]
+  let raw: JSearchJob[] = pages.flatMap(p => p.data ?? [])
 
   if (salaryMin && salaryMin > 0) {
     raw = raw.filter(j => !j.job_min_salary || j.job_min_salary >= salaryMin)
@@ -74,7 +77,7 @@ async function fetchJSearchResults(
       return {
         title:      j.job_title       ?? '',
         url:        j.job_apply_link  ?? '',
-        snippet:    (j.job_description ?? '').slice(0, 200),
+        snippet:    j.job_description ?? '',
         company:    j.employer_name   ?? '',
         location:   loc,
         salary_min: j.job_min_salary,
@@ -82,6 +85,78 @@ async function fetchJSearchResults(
       }
     }),
     error: null,
+  }
+}
+
+// ── Adzuna fetch ───────────────────────────────────────────────────────────────
+
+export function fetchAdzunaCountry(location: string): string {
+  const l = location.toLowerCase()
+  if (/uk|london|england|scotland|wales/.test(l)) return 'gb'
+  if (/australia|sydney|melbourne/.test(l)) return 'au'
+  if (/canada|toronto|vancouver/.test(l)) return 'ca'
+  return 'us'
+}
+
+export function adzunaMaxDaysOld(datePosted: string): number {
+  const map: Record<string, number> = { today: 1, '3days': 3, week: 7, month: 30 }
+  return map[datePosted] ?? 30
+}
+
+type AdzunaJob = {
+  title: string
+  company: { display_name: string }
+  description: string
+  location: { display_name: string }
+  salary_min?: number
+  salary_max?: number
+  redirect_url: string
+}
+
+async function fetchAdzunaResults(params: {
+  variant: string
+  location: string
+  remote: string
+  datePosted: string
+}): Promise<SearchResult[]> {
+  const appId  = process.env.ADZUNA_APP_ID
+  const appKey = process.env.ADZUNA_APP_KEY
+  if (!appId || !appKey) return []
+
+  const { variant, location, remote, datePosted } = params
+  const isRemote = remote === 'remote' || location.toLowerCase() === 'remote'
+  const country  = fetchAdzunaCountry(location)
+  const what     = isRemote ? `${variant} remote` : variant
+  const maxDays  = adzunaMaxDaysOld(datePosted)
+
+  const qs = new URLSearchParams({
+    app_id:           appId,
+    app_key:          appKey,
+    results_per_page: '50',
+    what:             what,
+    max_days_old:     String(maxDays),
+    sort_by:          'date',
+  })
+  if (!isRemote && location) qs.set('where', location)
+
+  try {
+    const res = await fetch(
+      `https://api.adzuna.com/v1/api/jobs/${country}/search/1?${qs.toString()}`,
+      { headers: { 'Content-Type': 'application/json' } },
+    )
+    if (!res.ok) return []
+    const data = await res.json().catch(() => ({ results: [] }))
+    return (data.results ?? []).map((j: AdzunaJob) => ({
+      title:      j.title                    ?? '',
+      url:        j.redirect_url             ?? '',
+      snippet:    j.description              ?? '',
+      company:    j.company?.display_name    ?? '',
+      location:   j.location?.display_name  ?? '',
+      salary_min: j.salary_min,
+      salary_max: j.salary_max,
+    }))
+  } catch {
+    return []
   }
 }
 
@@ -164,12 +239,16 @@ export async function processJobSearch(params: {
   supabase: SupabaseClient
 }): Promise<PipelineResult> {
   const { userId, preferences, extractedSkills, supabase } = params
-  const role      = preferences.role      ?? ''
-  const location  = preferences.location  ?? ''
-  const salaryMin = preferences.salary_min ?? 0
+  const role       = preferences.role        ?? ''
+  const location   = preferences.location    ?? ''
+  const remote     = preferences.remote      ?? 'any'
+  const salaryMin  = preferences.salary_min  ?? 0
+  const datePosted = preferences.date_posted ?? 'month'
 
-  // Step 1: Fetch from JSearch
-  const { results: rawResults, error: fetchError } = await fetchJSearchResults(role, location, salaryMin)
+  // Step 1: Fetch from JSearch (4 pages in parallel)
+  const { results: rawResults, error: fetchError } = await fetchJSearchResults({
+    role, location, remote, datePosted, salaryMin,
+  })
   if (fetchError) return { ok: false, error: fetchError }
 
   // Step 2: Filter seen jobs (30-day suppression)
@@ -185,13 +264,7 @@ export async function processJobSearch(params: {
     return true
   })
   const deduped = fuzzyDedup(exactDeduped)
-
-  // Pre-Claude heuristic: keep only titles containing a word from the target role
-  const roleWords = role.toLowerCase().split(/\s+/).filter(w => w.length > 2)
-  const relevant  = roleWords.length > 0
-    ? deduped.filter(r => roleWords.some(w => r.title.toLowerCase().includes(w)))
-    : deduped
-  const topResults = relevant.slice(0, 20)
+  const topResults = deduped.slice(0, 40)
 
   if (topResults.length === 0) return { ok: true, jobs: [] }
 

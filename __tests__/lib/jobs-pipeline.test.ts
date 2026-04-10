@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   wordsOver3,
   isDuplicateJob,
@@ -168,5 +168,49 @@ describe('STATUS_RANK', () => {
 
   it('has offer ranked higher than interview', () => {
     expect(STATUS_RANK.offer).toBeGreaterThan(STATUS_RANK.interview)
+  })
+})
+
+describe('fetchAdzunaResults country mapping', () => {
+  beforeEach(() => {
+    vi.stubEnv('ADZUNA_APP_ID', 'test-id')
+    vi.stubEnv('ADZUNA_APP_KEY', 'test-key')
+  })
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+  })
+
+  it('uses gb country code for London location', async () => {
+    const { fetchAdzunaCountry } = await import('@/lib/jobs-pipeline')
+    expect(fetchAdzunaCountry('London')).toBe('gb')
+  })
+
+  it('uses au country code for Sydney location', async () => {
+    const { fetchAdzunaCountry } = await import('@/lib/jobs-pipeline')
+    expect(fetchAdzunaCountry('Sydney')).toBe('au')
+  })
+
+  it('uses ca country code for Toronto location', async () => {
+    const { fetchAdzunaCountry } = await import('@/lib/jobs-pipeline')
+    expect(fetchAdzunaCountry('Toronto')).toBe('ca')
+  })
+
+  it('defaults to us country code', async () => {
+    const { fetchAdzunaCountry } = await import('@/lib/jobs-pipeline')
+    expect(fetchAdzunaCountry('New York')).toBe('us')
+    expect(fetchAdzunaCountry('')).toBe('us')
+    expect(fetchAdzunaCountry('remote')).toBe('us')
+  })
+})
+
+describe('adzunaMaxDaysOld', () => {
+  it('maps date_posted values to max_days_old numbers', async () => {
+    const { adzunaMaxDaysOld } = await import('@/lib/jobs-pipeline')
+    expect(adzunaMaxDaysOld('today')).toBe(1)
+    expect(adzunaMaxDaysOld('3days')).toBe(3)
+    expect(adzunaMaxDaysOld('week')).toBe(7)
+    expect(adzunaMaxDaysOld('month')).toBe(30)
+    expect(adzunaMaxDaysOld('unknown')).toBe(30)
   })
 })
