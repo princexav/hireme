@@ -60,12 +60,31 @@ describe('searchJobs', () => {
     expect(jobs[0].match_score).toBe(82)
     expect(jobs[0].match_reasons).toHaveLength(3)
   })
+
+  it('passes full snippet text to Claude without truncation', async () => {
+    const longSnippet = 'x'.repeat(500)
+    mockCreate.mockResolvedValue({
+      content: [{ type: 'text', text: '[]' }],
+    })
+
+    await searchJobs({
+      extractedSkills: ['React'],
+      preferences: { role: 'Engineer', location: 'Remote', salary_min: 0, salary_max: 0, remote: 'remote', date_posted: 'month' },
+      rawSearchResults: [{ title: 'Engineer', url: 'https://example.com', snippet: longSnippet, company: 'Acme', location: 'Remote' }],
+    })
+
+    const calledWith = mockCreate.mock.calls[0][0]
+    expect(calledWith.messages[0].content).toContain(longSnippet)
+  })
 })
 
 describe('tailorResume', () => {
-  it('returns tailored text and change summary', async () => {
+  it('returns tailored text, ATS scores, keywords, and change summary', async () => {
     mockCreate.mockResolvedValue({
       content: [{ type: 'text', text: JSON.stringify({
+        ats_keywords: ['React', 'TypeScript', 'component architecture'],
+        original_score: 42,
+        tailored_score: 88,
         tailored_text: 'Tailored resume here',
         changes: ['Added React keyword in skills section', 'Moved TypeScript to top of skills'],
       }) }],
@@ -78,5 +97,9 @@ describe('tailorResume', () => {
 
     expect(result.tailored_text).toBe('Tailored resume here')
     expect(result.changes).toHaveLength(2)
+    expect(result.ats_keywords).toContain('React')
+    expect(result.original_score).toBe(42)
+    expect(result.tailored_score).toBe(88)
+    expect(result.tailored_score).toBeGreaterThan(result.original_score)
   })
 })

@@ -91,10 +91,9 @@ export async function searchJobs(params: {
     preferences.remote && `remote=${preferences.remote}`,
   ].filter(Boolean).join(', ')
 
-  // Cap at 20 jobs, trim snippets to 200 chars to keep prompt fast
   const jobsToScore = rawSearchResults.slice(0, 20)
   const jobList = jobsToScore
-    .map((r, i) => `${i}. ${r.title} at ${r.company} (${r.location})\n${r.snippet.slice(0, 200)}`)
+    .map((r, i) => `${i}. ${r.title} at ${r.company} (${r.location})\n${r.snippet}`)
     .join('\n\n')
 
   const response = await getClient().messages.create({
@@ -152,6 +151,9 @@ ${jobList}`,
 // ─── Resume Tailoring ─────────────────────────────────────────────────────────
 
 export type TailoredResume = {
+  ats_keywords: string[]
+  original_score: number
+  tailored_score: number
   tailored_text: string
   changes: string[]
 }
@@ -167,18 +169,39 @@ export async function tailorResume(params: {
     max_tokens: 4096,
     messages: [{
       role: 'user',
-      content: `Tailor this resume for the job description below. Rules:
-- Do NOT invent experience or skills that aren't in the original
-- Reorder skills to put matching ones first
-- Mirror language from the job description where the candidate has matching experience
-- Keep all factual content accurate
-- Return ONLY valid JSON: {"tailored_text": string, "changes": string[]}
-  where changes is a list of what you changed and why (max 5 items)
+      content: `You are an ATS optimization expert. Execute these four steps in order, then return a single JSON object.
 
-Job Description:
+STEP 1 — Extract ATS keywords
+Identify the 10–15 most critical keywords and phrases an ATS would scan for in this JD. Include: required tools/technologies, job title variants, certifications, key methodologies. Be exact — use the JD's own phrasing.
+
+STEP 2 — Score the original resume
+Semantically score the ORIGINAL resume against the extracted keywords (0–100). A keyword is "present" if the resume demonstrates that skill — even if phrased differently (e.g. "AWS" matches "Amazon Web Services"). Be honest; do not inflate.
+
+STEP 3 — Tailor the resume
+Rewrite the resume to naturally integrate any missing keywords from Step 1. Rules:
+- NEVER invent skills or experience the candidate does not have
+- Reformulate real experience using JD vocabulary (e.g. "built data pipelines" → "designed and deployed ETL pipelines in Airflow" if the JD uses those terms and the candidate has the underlying experience)
+- Reorder the Skills section to lead with JD-matching skills
+- Inject missing keywords into relevant Experience bullets where truthfully applicable
+- Keep all dates, companies, titles, and facts unchanged
+
+STEP 4 — Score the tailored resume
+Semantically score the TAILORED resume against the same keywords (0–100). This score must be higher than Step 2's score — if it isn't, revise Step 3.
+
+Return ONLY this JSON (no prose, no code fences):
+{
+  "ats_keywords": string[],
+  "original_score": number,
+  "tailored_score": number,
+  "tailored_text": string,
+  "changes": string[]
+}
+where changes is max 5 bullet points describing what was reformulated and why.
+
+JOB DESCRIPTION:
 ${jobDescription}
 
-Original Resume:
+ORIGINAL RESUME:
 ${originalResume}`,
     }],
   })
@@ -198,8 +221,25 @@ export async function* streamChat(params: {
   const stream = getClient().messages.stream({
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
-    system: `You are a job search assistant. Help the user with their job applications.
-Context about the user: ${params.context}`,
+    system: `You are a sharp, honest job search advisor — not a hype machine.
+
+Philosophy:
+- Quality over quantity. Discourage applying to poor-fit roles.
+- Never invent skills or experience the candidate doesn't have.
+- Give specific, actionable advice. Avoid corporate platitudes.
+- When asked about fit, cite concrete evidence from the JD and the candidate's background.
+- For interview prep, use the STAR+R format (Situation, Task, Action, Result, Reflection).
+- For salary questions, give a realistic range based on role, location, and experience level.
+
+What you can help with:
+- "Why is this a good fit?" — analyse the match honestly, including gaps
+- "Help me prep for an interview" — generate STAR+R stories specific to this role
+- "What should I ask the interviewer?" — suggest sharp, informed questions from the JD
+- "How should I negotiate salary?" — give tactical framing based on their match score
+- "Should I apply?" — give an honest recommendation based on fit
+
+Context about the candidate and selected job:
+${params.context}`,
     messages: params.messages,
   })
 
