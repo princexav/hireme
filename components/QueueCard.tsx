@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { MapPin, Banknote } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -11,6 +12,13 @@ type Props = {
   job: Job
   onSend: (id: string) => Promise<void>
   onSkip: (id: string) => Promise<void>
+}
+
+function formatSalary(min: number | null | undefined, max: number | null | undefined): string {
+  if (min && max) return `$${(min / 1000).toFixed(0)}k – $${(max / 1000).toFixed(0)}k`
+  if (min)        return `From $${(min / 1000).toFixed(0)}k`
+  if (max)        return `Up to $${(max / 1000).toFixed(0)}k`
+  return ''
 }
 
 export function QueueCard({ job, onSend, onSkip }: Props) {
@@ -40,6 +48,9 @@ export function QueueCard({ job, onSend, onSkip }: Props) {
     }
   }
 
+  const salaryText = formatSalary(job.salary_min, job.salary_max)
+  const hasMetadata = job.location || salaryText
+
   return (
     <>
       <Card className="border-[#e2e8f0] rounded-xl">
@@ -53,6 +64,23 @@ export function QueueCard({ job, onSend, onSkip }: Props) {
               {job.match_score}% match
             </span>
           </div>
+
+          {hasMetadata && (
+            <div className="flex items-center gap-3 mb-3">
+              {job.location && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin size={12} />
+                  {job.location}
+                </span>
+              )}
+              {salaryText && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Banknote size={12} />
+                  {salaryText}
+                </span>
+              )}
+            </div>
+          )}
 
           <ul className="space-y-1.5 mb-4">
             {job.match_reasons.map((r, i) => (
