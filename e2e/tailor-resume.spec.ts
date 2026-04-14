@@ -58,8 +58,22 @@ test('tailor resume: full flow + changes persist on cache hit', async ({ page })
   expect(resumeText.length).toBeGreaterThan(100)
   console.log(`✓ Tailored resume text: ${resumeText.length} chars`)
 
-  // ── Assert PDF download button present ────────────────────────────────
-  await expect(page.getByRole('button', { name: /download pdf/i })).toBeVisible()
+  // ── Assert PDF download button present and triggers a real download ───
+  const downloadBtn = page.getByRole('button', { name: /download pdf/i })
+  await expect(downloadBtn).toBeVisible()
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: 30000 }),
+    downloadBtn.click(),
+  ])
+  const downloadPath = await download.path()
+  expect(downloadPath).toBeTruthy()
+
+  // Verify the file has actual PDF content (starts with %PDF)
+  const { readFileSync } = await import('fs')
+  const pdfHeader = readFileSync(downloadPath!).slice(0, 4).toString('ascii')
+  expect(pdfHeader).toBe('%PDF')
+  console.log(`✓ PDF downloaded: ${download.suggestedFilename()} (header: ${pdfHeader})`)
 
   // ── Close and reopen — verify useEffect auto-loads cached resume ────────
   await page.getByRole('button', { name: /done/i }).click()
