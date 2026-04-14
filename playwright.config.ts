@@ -6,9 +6,12 @@ export default defineConfig({
   retries: 1,
   timeout: 30000,
   use: {
-    baseURL: 'http://localhost:3001',
+    baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    launchOptions: {
+      slowMo: 600,
+    },
   },
   projects: [
     {
@@ -18,7 +21,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm dev',
-    url: 'http://localhost:3001',
+    url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 60000,
   },

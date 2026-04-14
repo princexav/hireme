@@ -3,6 +3,9 @@ import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ChatSidebar } from '@/components/ChatSidebar'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { SignOutButton } from '@/components/SignOutButton'
+import { ChatProvider } from './chat-context'
 
 const NAV_ITEMS = [
   { href: '/search', label: 'Find Jobs', icon: '🔍' },
@@ -30,6 +33,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const queueCount = queueResult.data?.length ?? 0
 
   return (
+    <ChatProvider>
     <div className="flex h-screen overflow-hidden bg-[#f8fafc]">
       {/* Icon Nav */}
       <nav className="w-14 bg-[#0f172a] flex flex-col items-center py-4 gap-1 shrink-0">
@@ -58,7 +62,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           )
         })}
 
-        <div className="mt-auto">
+        <div className="mt-auto flex flex-col items-center gap-1">
           <Link
             href="/onboarding"
             title="Update Resume"
@@ -67,18 +71,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
           >
             <span className="text-lg">📄</span>
           </Link>
+          <SignOutButton />
         </div>
       </nav>
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-white">
         <div className="max-w-3xl mx-auto p-8">
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </div>
       </main>
 
       {/* Collapsible Chat Sidebar */}
       <ChatSidebar />
     </div>
+    </ChatProvider>
   )
 }

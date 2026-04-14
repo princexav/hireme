@@ -19,6 +19,7 @@ export type Preferences = {
   salary_min: number
   salary_max: number
   remote: 'remote' | 'hybrid' | 'onsite' | 'any'
+  date_posted: 'month' | 'week' | '3days' | 'today'
 }
 
 export type Profile = {
@@ -45,6 +46,7 @@ export type Job = {
   salary_max: number | null
   applied_at: string | null
   created_at: string
+  posted_at: string | null
 }
 
 export type Resume = {
@@ -52,6 +54,10 @@ export type Resume = {
   job_id: string
   user_id: string
   tailored_text: string
+  ats_keywords: string[]
+  original_ats_score: number | null
+  tailored_ats_score: number | null
+  changes: string[]
   pdf_url: string | null
   created_at: string
 }

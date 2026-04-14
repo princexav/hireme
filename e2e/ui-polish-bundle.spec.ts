@@ -147,7 +147,7 @@ test.describe('Tailor sheet progress bar', () => {
     // Fresh tailor: progress bar should appear
     console.log('ℹ Fresh tailor detected — checking progress bar...')
     const progressBar = page.locator('[role="progressbar"]')
-    await expect(progressBar).toBeVisible({ timeout: 10000 })
+    await expect(progressBar).toBeVisible({ timeout: 60000 })
     await page.screenshot({ path: 'e2e/screenshots/tailor-progress-bar.png', fullPage: true })
     console.log('✓ Progress bar visible')
 

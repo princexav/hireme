@@ -1,17 +1,21 @@
 import useSWR from 'swr'
 import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@/hooks/useUser'
 import type { Job } from '@/lib/supabase/types'
 
-async function fetchJobs(): Promise<Job[]> {
-  const supabase = createClient()
-  const { data } = await supabase
-    .from('jobs')
-    .select('*')
-    .order('created_at', { ascending: false })
-  return data ?? []
-}
-
 export function useJobs() {
-  const { data, error, isLoading, mutate } = useSWR('jobs', fetchJobs)
+  const { data: user } = useUser()
+  const { data, error, isLoading, mutate } = useSWR(
+    user ? `jobs-${user.id}` : null,
+    async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('match_score', { ascending: false })
+      return (data ?? []) as Job[]
+    },
+  )
   return { jobs: data ?? [], error, isLoading, mutate }
 }

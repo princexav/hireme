@@ -8,12 +8,17 @@ const mockJob: Job = {
   user_id: 'user-1',
   title: 'Senior Frontend Engineer',
   company: 'Acme Corp',
+  location: 'Remote',
   url: 'https://example.com/job/1',
   jd_text: 'React TypeScript required',
   match_score: 82,
   match_reasons: ['Strong React match', 'TypeScript aligned', 'Remote-friendly'],
   status: 'queued',
   notes: '',
+  salary_min: null,
+  salary_max: null,
+  applied_at: null,
+  posted_at: null,
   created_at: new Date().toISOString(),
 }
 
