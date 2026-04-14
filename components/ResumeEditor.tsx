@@ -1,19 +1,10 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
 import { createClient } from '@/lib/supabase/client'
 import { ResumePDF } from '@/components/ResumePDF'
-
-// PDFDownloadLink uses browser-only download/blob APIs — must be client-only.
-// ResumePDF is kept as a static import so @react-pdf/renderer's internal PDF
-// renderer receives a concrete component (not a lazy wrapper), which it requires.
-const PDFDownloadLink = dynamic(
-  () => import('@react-pdf/renderer').then(mod => mod.PDFDownloadLink),
-  { ssr: false }
-)
 
 type Props = {
   jobId: string
@@ -50,6 +41,8 @@ export function ResumeEditor({ jobId, jobTitle, onClose }: Props) {
   const [progress, setProgress] = useState(0)
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState('')
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [pdfError, setPdfError] = useState(false)
   const progressRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -166,6 +159,26 @@ export function ResumeEditor({ jobId, jobTitle, onClose }: Props) {
     ? `Resume_${jobTitle.replace(/[^a-zA-Z0-9]+/g, '_')}.pdf`
     : 'Tailored_Resume.pdf'
 
+  async function handleDownloadPDF() {
+    setPdfLoading(true)
+    setPdfError(false)
+    try {
+      const { pdf } = await import('@react-pdf/renderer')
+      const blob = await pdf(<ResumePDF text={tailored} jobTitle={jobTitle} />).toBlob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 100)
+    } catch (err) {
+      console.error('PDF generation failed:', err)
+      setPdfError(true)
+    } finally {
+      setPdfLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       {!loaded ? (
@@ -261,16 +274,13 @@ export function ResumeEditor({ jobId, jobTitle, onClose }: Props) {
             <Button onClick={copyToClipboard} variant="outline" className="flex-1">
               Copy to Clipboard
             </Button>
-            <PDFDownloadLink
-              document={<ResumePDF text={tailored} jobTitle={jobTitle} />}
-              fileName={filename}
+            <Button
+              onClick={handleDownloadPDF}
+              disabled={pdfLoading}
+              className="flex-1 bg-[#0f172a] hover:bg-[#1e293b] text-white"
             >
-              {({ loading: pdfLoading }) => (
-                <Button disabled={pdfLoading} className="flex-1 bg-[#0f172a] hover:bg-[#1e293b] text-white">
-                  {pdfLoading ? 'Preparing PDF…' : 'Download PDF'}
-                </Button>
-              )}
-            </PDFDownloadLink>
+              {pdfLoading ? 'Preparing PDF…' : pdfError ? 'Retry PDF' : 'Download PDF'}
+            </Button>
             <Button variant="outline" onClick={onClose}>Done</Button>
           </div>
         </>
