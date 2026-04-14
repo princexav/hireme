@@ -9,6 +9,19 @@ import { createClient } from '@/lib/supabase/client'
 import type { ChatMessage } from '@/lib/claude'
 import ReactMarkdown from 'react-markdown'
 
+const MD_COMPONENTS: React.ComponentProps<typeof ReactMarkdown>['components'] = {
+  p:    ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+  ul:   ({ children }) => <ul className="ml-4 mb-2 space-y-1">{children}</ul>,
+  ol:   ({ children }) => <ol className="ml-4 mb-2 space-y-1 list-decimal">{children}</ol>,
+  li:   ({ children }) => <li className="list-disc">{children}</li>,
+  code: ({ children }) => <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+  a:    ({ href, children }) => (
+    <a href={href ?? '#'} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+      {children}
+    </a>
+  ),
+}
+
 const GREETING: ChatMessage = {
   role: 'assistant',
   content: 'Hi! I can help with your job search. Select a job and ask me anything — "Why is this a good fit?" or "Help me prep for an interview."',
@@ -187,18 +200,7 @@ export function ChatSidebar() {
                     <ReactMarkdown
                       allowedElements={['p', 'strong', 'em', 'ul', 'ol', 'li', 'code', 'a']}
                       unwrapDisallowed
-                      components={{
-                          p:    ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                        ul:   ({ children }) => <ul className="ml-4 mb-2 space-y-1">{children}</ul>,
-                        ol:   ({ children }) => <ol className="ml-4 mb-2 space-y-1 list-decimal">{children}</ol>,
-                        li:   ({ children }) => <li className="list-disc">{children}</li>,
-                        code: ({ children }) => <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
-                        a:    ({ href, children }) => (
-                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                            {children}
-                          </a>
-                        ),
-                      }}
+                      components={MD_COMPONENTS}
                     >
                       {msg.content}
                     </ReactMarkdown>
