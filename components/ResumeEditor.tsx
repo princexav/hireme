@@ -66,7 +66,12 @@ export function ResumeEditor({ jobId, jobTitle, onClose }: Props) {
         .single()
       if (cancelled) return
       if (data?.tailored_text) {
-        setTailored(data.tailored_text)
+        try {
+          const parsed = JSON.parse(data.tailored_text)
+          setTailored(JSON.stringify(parsed, null, 2))
+        } catch {
+          setTailored(data.tailored_text)
+        }
         setChanges(data.changes ?? [])
         if (data.original_ats_score != null && data.tailored_ats_score != null) {
           setAts({
@@ -120,7 +125,12 @@ export function ResumeEditor({ jobId, jobTitle, onClose }: Props) {
         const data = await res.json()
         stopTimer()
         setProgress(100)
-        setTailored(data.tailored_text)
+        try {
+          const parsed = JSON.parse(data.tailored_text)
+          setTailored(JSON.stringify(parsed, null, 2))
+        } catch {
+          setTailored(data.tailored_text)
+        }
         setChanges(data.changes ?? [])
         if (data.original_ats_score != null && data.tailored_ats_score != null) {
           setAts({
@@ -243,8 +253,8 @@ export function ResumeEditor({ jobId, jobTitle, onClose }: Props) {
           </div>
           <Textarea
             value={tailored}
-            onChange={e => setTailored(e.target.value)}
-            rows={16}
+            readOnly
+            rows={20}
             className="font-mono text-xs"
           />
           <div className="flex gap-2">
