@@ -15,9 +15,11 @@ type Props = {
 }
 
 function formatSalary(min: number | null | undefined, max: number | null | undefined): string {
-  if (min && max) return `$${(min / 1000).toFixed(0)}k – $${(max / 1000).toFixed(0)}k`
-  if (min)        return `From $${(min / 1000).toFixed(0)}k`
-  if (max)        return `Up to $${(max / 1000).toFixed(0)}k`
+  const hasMin = min != null
+  const hasMax = max != null
+  if (hasMin && hasMax) return `$${(min! / 1000).toFixed(0)}k – $${(max! / 1000).toFixed(0)}k`
+  if (hasMin)           return `From $${(min! / 1000).toFixed(0)}k`
+  if (hasMax)           return `Up to $${(max! / 1000).toFixed(0)}k`
   return ''
 }
 
@@ -49,7 +51,7 @@ export function QueueCard({ job, onSend, onSkip }: Props) {
   }
 
   const salaryText = formatSalary(job.salary_min, job.salary_max)
-  const hasMetadata = job.location || salaryText
+  const hasMetadata = Boolean(job.location) || Boolean(salaryText)
 
   return (
     <>
