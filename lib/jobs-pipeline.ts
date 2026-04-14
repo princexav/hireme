@@ -36,6 +36,7 @@ type JSearchJob = {
   job_is_remote?: boolean
   job_min_salary?: number
   job_max_salary?: number
+  job_posted_at_datetime_utc?: string
 }
 
 async function fetchJSearchResults(params: {
@@ -93,6 +94,7 @@ async function fetchJSearchResults(params: {
         location:   loc,
         salary_min: j.job_min_salary,
         salary_max: j.job_max_salary,
+        postedAt:   j.job_posted_at_datetime_utc ?? undefined,
       }
     }),
     error: null,
@@ -122,6 +124,7 @@ type AdzunaJob = {
   salary_min?: number
   salary_max?: number
   redirect_url: string
+  created?: string
 }
 
 async function fetchAdzunaResults(params: {
@@ -165,6 +168,7 @@ async function fetchAdzunaResults(params: {
       location:   j.location?.display_name  ?? '',
       salary_min: j.salary_min,
       salary_max: j.salary_max,
+      postedAt:   j.created ?? undefined,
     }))
   } catch {
     return []
@@ -323,6 +327,7 @@ export async function processJobSearch(params: {
       match_reasons: job.match_reasons,
       salary_min:    job.salary_min  != null ? Math.round(job.salary_min)  : null,
       salary_max:    job.salary_max  != null ? Math.round(job.salary_max)  : null,
+      posted_at:     job.postedAt ?? null,
       status:        finalStatus,
     }
   })

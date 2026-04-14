@@ -1,8 +1,7 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { extractTextFromResume } from '@/lib/resume-parser'
 import { PreferencesForm } from '@/components/PreferencesForm'
 import { Button } from '@/components/ui/button'
 import type { Preferences } from '@/lib/supabase/types'
@@ -11,36 +10,54 @@ type Step = 'resume' | 'preferences'
 
 export default function OnboardingPage() {
   const [step, setStep] = useState<Step>('resume')
-  const [resumeText, setResumeText] = useState('')
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [prefillPrefs, setPrefillPrefs] = useState<Partial<Preferences> | undefined>(undefined)
+  const [isReturning, setIsReturning] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
-  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    async function loadExistingProfile() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('profiles')
+        .select('preferences')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (data?.preferences) {
+        setIsReturning(true)
+        setPrefillPrefs(data.preferences as Partial<Preferences>)
+      }
+    }
+    loadExistingProfile()
+  }, [])
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setLoading(true)
+    setResumeFile(file)
     setError('')
-    try {
-      const text = await extractTextFromResume(file)
-      setResumeText(text)
-    } catch (err) {
-      setError((err as Error).message)
-    } finally {
-      setLoading(false)
-    }
   }
 
   async function handleResumeSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!resumeText) { setError('Please upload a resume first'); return }
+    if (!resumeFile) { setError('Please upload a resume first'); return }
     setLoading(true)
     try {
       const formData = new FormData()
-      formData.append('resumeText', resumeText)
+      formData.append('file', resumeFile)
       const res = await fetch('/api/profile/extract', { method: 'POST', body: formData })
       if (!res.ok) { setError('Failed to extract profile — try again'); return }
+      const data = await res.json()
+      const extractedRole = data.titles?.[0]
+      setPrefillPrefs(prev => ({
+        ...prev,
+        ...(extractedRole ? { role: extractedRole } : {}),
+      }))
       setStep('preferences')
     } finally {
       setLoading(false)
@@ -78,25 +95,31 @@ export default function OnboardingPage() {
 
       {step === 'resume' ? (
         <div>
-          <h1 className="text-2xl font-bold text-[#0f172a] tracking-tight mb-1">Upload your resume</h1>
-          <p className="text-[#64748b] text-sm mb-6">We'll extract your skills and experience automatically using AI.</p>
+          <h1 className="text-2xl font-bold text-[#0f172a] tracking-tight mb-1">
+            {isReturning ? 'Update your resume' : 'Upload your resume'}
+          </h1>
+          <p className="text-[#64748b] text-sm mb-6">
+            {isReturning
+              ? "Upload a new resume and we'll re-extract your skills for you to review."
+              : "We'll extract your skills and experience automatically using AI."}
+          </p>
 
           <form onSubmit={handleResumeSubmit} className="space-y-4">
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              aria-label={resumeText ? 'Resume loaded, click to change' : 'Upload resume file'}
+              aria-label={resumeFile ? 'Resume loaded, click to change' : 'Upload resume file'}
               className={`w-full border-2 border-dashed rounded-xl p-10 text-center transition-colors
-                ${resumeText
+                ${resumeFile
                   ? 'border-[#16a34a] bg-[#f0fdf4]'
                   : 'border-[#cbd5e1] hover:border-[#0f172a] bg-[#f8fafc]'}`}
             >
-              <div className="text-4xl mb-3">{resumeText ? '✅' : '📄'}</div>
+              <div className="text-4xl mb-3">{resumeFile ? '✅' : '📄'}</div>
               <p className="font-semibold text-[#0f172a] text-sm mb-1">
-                {resumeText ? 'Resume loaded — click to change' : 'Drop your resume here'}
+                {resumeFile ? 'Resume loaded — click to change' : 'Drop your resume here'}
               </p>
               <p className="text-xs text-[#64748b]">
-                {resumeText ? '' : 'PDF, DOCX, or TXT · up to 10MB'}
+                {resumeFile ? '' : 'PDF, DOCX, or TXT · up to 10MB'}
               </p>
             </button>
             <input
@@ -112,7 +135,7 @@ export default function OnboardingPage() {
             <Button
               type="submit"
               className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white h-11"
-              disabled={loading || !resumeText}
+              disabled={loading || !resumeFile}
             >
               {loading ? 'Extracting profile with AI…' : 'Continue →'}
             </Button>
@@ -120,9 +143,19 @@ export default function OnboardingPage() {
         </div>
       ) : (
         <div>
-          <h1 className="text-2xl font-bold text-[#0f172a] tracking-tight mb-1">Set your preferences</h1>
-          <p className="text-[#64748b] text-sm mb-6">Tell us what you're looking for so we can find the best matches.</p>
-          <PreferencesForm onSave={handlePreferencesSave} />
+          <h1 className="text-2xl font-bold text-[#0f172a] tracking-tight mb-1">
+            {isReturning ? 'Confirm your preferences' : 'Set your preferences'}
+          </h1>
+          <p className="text-[#64748b] text-sm mb-6">
+            {isReturning
+              ? 'Review your extracted skills and update your preferences if needed.'
+              : "Tell us what you're looking for so we can find the best matches."}
+          </p>
+          <PreferencesForm
+            initial={prefillPrefs}
+            onSave={handlePreferencesSave}
+            submitLabel={isReturning ? 'Save Updates' : undefined}
+          />
         </div>
       )}
     </div>

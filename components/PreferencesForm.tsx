@@ -5,24 +5,33 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Preferences } from '@/lib/supabase/types'
 
+const DATE_POSTED_OPTIONS: { value: Preferences['date_posted']; label: string }[] = [
+  { value: 'today', label: 'Past 24 hours' },
+  { value: '3days', label: 'Past 3 days' },
+  { value: 'week',  label: 'Past week' },
+  { value: 'month', label: 'Past month' },
+]
+
 type Props = {
   initial?: Partial<Preferences>
   onSave: (prefs: Preferences) => Promise<void>
+  submitLabel?: string
 }
 
-export function PreferencesForm({ initial, onSave }: Props) {
+export function PreferencesForm({ initial, onSave, submitLabel }: Props) {
   const [role, setRole] = useState(initial?.role ?? '')
   const [location, setLocation] = useState(initial?.location ?? '')
   const [salaryMin, setSalaryMin] = useState(initial?.salary_min ?? 0)
   const [salaryMax, setSalaryMax] = useState(initial?.salary_max ?? 0)
   const [remote, setRemote] = useState<Preferences['remote']>(initial?.remote ?? 'any')
+  const [datePosted, setDatePosted] = useState<Preferences['date_posted']>(initial?.date_posted ?? 'month')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     try {
-      await onSave({ role, location, salary_min: salaryMin, salary_max: salaryMax, remote })
+      await onSave({ role, location, salary_min: salaryMin, salary_max: salaryMax, remote, date_posted: datePosted })
     } finally {
       setLoading(false)
     }
@@ -65,8 +74,20 @@ export function PreferencesForm({ initial, onSave }: Props) {
           ))}
         </div>
       </div>
+      <div className="space-y-1">
+        <Label>Date Posted</Label>
+        <select
+          value={datePosted}
+          onChange={e => setDatePosted(e.target.value as Preferences['date_posted'])}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
+          {DATE_POSTED_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
       <Button type="submit" disabled={loading} className="w-full">
-        {loading ? 'Saving…' : 'Save Preferences'}
+        {loading ? 'Saving…' : (submitLabel ?? 'Save Preferences')}
       </Button>
     </form>
   )

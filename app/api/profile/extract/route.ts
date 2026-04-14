@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { extractProfile } from '@/lib/claude'
+import { extractTextFromResume } from '@/lib/resume-parser'
+
+export const runtime = 'nodejs'
+export const maxDuration = 120
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -8,8 +12,16 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const formData = await request.formData()
-  const resumeText = formData.get('resumeText') as string
-  if (!resumeText) return NextResponse.json({ error: 'resumeText required' }, { status: 400 })
+
+  // Accept either a raw file upload or pre-parsed text
+  let resumeText = formData.get('resumeText') as string | null
+  const file = formData.get('file') as File | null
+
+  if (file) {
+    resumeText = await extractTextFromResume(file)
+  }
+
+  if (!resumeText) return NextResponse.json({ error: 'file or resumeText required' }, { status: 400 })
 
   try {
     const profile = await extractProfile(resumeText)

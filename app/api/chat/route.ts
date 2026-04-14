@@ -25,8 +25,8 @@ export async function POST(request: Request) {
         for await (const chunk of streamChat({ messages, context })) {
           controller.enqueue(encoder.encode(chunk))
         }
-      } catch (err) {
-        controller.enqueue(encoder.encode(`\n[Error: ${(err as Error).message}]`))
+      } catch {
+        // Close cleanly — client-side error state in ChatSidebar handles the UI
       } finally {
         controller.close()
       }

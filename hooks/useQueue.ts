@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import { useJobs } from '@/hooks/useJobs'
 
 export function useQueue() {
@@ -5,13 +6,27 @@ export function useQueue() {
   const queue = jobs.filter(j => j.status === 'queued')
 
   async function sendJob(id: string) {
-    await fetch(`/api/jobs/${id}/send`, { method: 'POST' })
-    await mutate()
+    const optimistic = jobs.filter(j => j.id !== id)
+    try {
+      await mutate(
+        fetch(`/api/jobs/${id}/send`, { method: 'POST' }).then(() => undefined),
+        { optimisticData: optimistic, rollbackOnError: true, revalidate: true },
+      )
+    } catch {
+      toast.error('Failed to send job. Please try again.')
+    }
   }
 
   async function skipJob(id: string) {
-    await fetch(`/api/jobs/${id}/skip`, { method: 'POST' })
-    await mutate()
+    const optimistic = jobs.filter(j => j.id !== id)
+    try {
+      await mutate(
+        fetch(`/api/jobs/${id}/skip`, { method: 'POST' }).then(() => undefined),
+        { optimisticData: optimistic, rollbackOnError: true, revalidate: true },
+      )
+    } catch {
+      toast.error('Failed to skip job. Please try again.')
+    }
   }
 
   return { queue, isLoading, sendJob, skipJob }

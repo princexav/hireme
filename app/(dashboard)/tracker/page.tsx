@@ -1,4 +1,5 @@
 import { KanbanBoard } from '@/components/KanbanBoard'
+import { TrackerStats } from '@/components/TrackerStats'
 
 export default function TrackerPage() {
   return (
@@ -9,6 +10,7 @@ export default function TrackerPage() {
           Move cards as your applications progress
         </p>
       </div>
+      <TrackerStats />
       <KanbanBoard />
     </div>
   )

@@ -1,6 +1,12 @@
+'use client'
+import { formatDistanceToNow } from 'date-fns'
+import { useChatContext } from '@/app/(dashboard)/chat-context'
 import type { Job, JobStatus } from '@/lib/supabase/types'
 
+const CHAT_STAGES: JobStatus[] = ['interview', 'offer']
+
 const COLUMN_LABELS: Record<JobStatus, string> = {
+  suggested: 'Suggested',
   saved: 'Saved',
   queued: 'In Queue',
   applied: 'Applied',
@@ -30,6 +36,8 @@ type Props = {
 export function KanbanColumn({ status, jobs, onStatusChange }: Props) {
   const nextStatus = NEXT[status]
   const colorClass = COLUMN_COLORS[status] ?? 'bg-[#f1f5f9] text-[#64748b]'
+  const { openChatForJob } = useChatContext()
+  const showChat = CHAT_STAGES.includes(status)
 
   return (
     <div className="min-w-[220px] flex flex-col gap-2">
@@ -49,8 +57,14 @@ export function KanbanColumn({ status, jobs, onStatusChange }: Props) {
       {jobs.map(job => (
         <div key={job.id} className="bg-white border border-[#e2e8f0] rounded-xl p-3 shadow-sm">
           <p className="text-sm font-semibold text-[#0f172a] leading-tight mb-0.5">{job.title}</p>
-          <p className="text-xs text-[#64748b] mb-2">{job.company}</p>
-          <div className="flex gap-2 flex-wrap">
+          <p className="text-xs text-[#64748b]">{job.company}</p>
+          {job.applied_at && (
+            <p className="text-xs text-[#94a3b8] mb-1">
+              Applied {formatDistanceToNow(new Date(job.applied_at), { addSuffix: true })}
+            </p>
+          )}
+          {!job.applied_at && <div className="mb-2" />}
+          <div className="flex gap-2 flex-wrap items-center">
             {nextStatus && (
               <button
                 type="button"
@@ -65,6 +79,14 @@ export function KanbanColumn({ status, jobs, onStatusChange }: Props) {
               className="text-xs text-[#94a3b8] hover:text-[#ef4444] transition-colors">
               Reject
             </button>
+            {showChat && (
+              <button
+                type="button"
+                onClick={() => openChatForJob(job)}
+                className="ml-auto text-xs font-medium text-[#64748b] hover:text-[#0f172a] transition-colors">
+                💬 Prep
+              </button>
+            )}
           </div>
         </div>
       ))}
