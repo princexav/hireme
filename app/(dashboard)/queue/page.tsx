@@ -20,7 +20,7 @@ export default function QueuePage() {
 
       {queue.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="bg-muted rounded-xl p-4 mb-4">
+          <div className="bg-muted rounded-xl p-3 mb-4">
             <FileText size={48} className="text-muted-foreground" />
           </div>
           <h2 className="text-base font-semibold text-[#0f172a] tracking-tight mb-2">
