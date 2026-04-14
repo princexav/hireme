@@ -18,7 +18,6 @@ const PDFDownloadLink = dynamic(
 type Props = {
   jobId: string
   jobTitle?: string
-  company?: string
   onClose: () => void
 }
 
@@ -32,24 +31,19 @@ const PHASES = [
   { max: 20, label: 'Extracting ATS keywords from Job Description…', ms: 300  },
   { max: 50, label: 'Semantically scoring your current resume…',      ms: 430  },
   { max: 90, label: 'AI is tailoring and rewriting your experience…', ms: 500  },
-  { max: 99, label: 'Formatting PDF and finalizing…',                  ms: 1000 },
+  { max: 99, label: 'Formatting PDF and finalizing…',                 ms: 1000 },
 ]
 
 function getPhaseIndex(p: number): number {
-  if (p < 20) return 0
-  if (p < 50) return 1
-  if (p < 90) return 2
-  return 3
+  const idx = PHASES.findIndex(phase => p < phase.max)
+  return idx === -1 ? PHASES.length - 1 : idx
 }
 
 function getPhaseMs(p: number): number {
-  if (p < 20) return 300
-  if (p < 50) return 430
-  if (p < 90) return 500
-  return 1000
+  return PHASES[getPhaseIndex(p)].ms
 }
 
-export function ResumeEditor({ jobId, jobTitle, company, onClose }: Props) {
+export function ResumeEditor({ jobId, jobTitle, onClose }: Props) {
   const [tailored, setTailored] = useState('')
   const [changes, setChanges] = useState<string[]>([])
   const [ats, setAts] = useState<ATSResult | null>(null)

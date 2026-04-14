@@ -1,8 +1,9 @@
 'use client'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ResumeEditor } from '@/components/ResumeEditor'
 import type { Job } from '@/lib/supabase/types'
 
@@ -19,9 +20,12 @@ export function QueueCard({ job, onSend, onSkip }: Props) {
 
   async function handleSend() {
     setSending(true)
-    window.open?.(job.url, '_blank')
     try {
       await onSend(job.id)
+      toast.success('Marked as Applied', {
+        description: `${job.title} at ${job.company} moved to your tracker.`,
+      })
+      window.open(job.url, '_blank')
     } finally {
       setSending(false)
     }
@@ -73,7 +77,7 @@ export function QueueCard({ job, onSend, onSkip }: Props) {
               onClick={() => setSheetOpen(true)}
               className="border-[#e2e8f0] text-[#0f172a]"
             >
-              Edit Resume
+              Tailor Resume
             </Button>
             <button
               type="button"
@@ -93,9 +97,12 @@ export function QueueCard({ job, onSend, onSkip }: Props) {
             <SheetTitle className="text-[#0f172a]">
               Tailored Resume — {job.title} at {job.company}
             </SheetTitle>
+            <SheetDescription>
+              AI-tailored to this job's ATS keywords and requirements.
+            </SheetDescription>
           </SheetHeader>
           <div className="mt-4">
-            <ResumeEditor jobId={job.id} onClose={() => setSheetOpen(false)} />
+            <ResumeEditor jobId={job.id} jobTitle={job.title} onClose={() => setSheetOpen(false)} />
           </div>
         </SheetContent>
       </Sheet>
