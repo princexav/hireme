@@ -3,17 +3,9 @@ import type { TailoredResumeJSON } from '@/lib/claude'
 
 Font.registerHyphenationCallback((word) => [word])
 
-Font.register({
-  family: 'Roboto',
-  fonts: [
-    { src: '/fonts/Roboto-Regular.ttf', fontWeight: 'normal' },
-    { src: '/fonts/Roboto-Bold.ttf', fontWeight: 'bold' },
-  ],
-})
-
 const styles = StyleSheet.create({
   page: {
-    fontFamily: 'Roboto',
+    fontFamily: 'Helvetica',
     fontSize: 10,
     paddingTop: 48,
     paddingBottom: 48,
@@ -22,8 +14,7 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
   },
   sectionHeading: {
-    fontFamily: 'Roboto',
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     fontSize: 11,
     marginTop: 10,
     marginBottom: 3,
@@ -39,8 +30,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   jobTitle: {
-    fontFamily: 'Roboto',
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     fontSize: 10,
   },
   jobMeta: {
