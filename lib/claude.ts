@@ -55,6 +55,7 @@ export type SearchResult = {
   location: string
   salary_min?: number
   salary_max?: number
+  postedAt?: string
 }
 
 export type ScoredJob = {
@@ -67,6 +68,7 @@ export type ScoredJob = {
   match_reasons: string[]
   salary_min?: number
   salary_max?: number
+  postedAt?: string
 }
 
 type JobScore = {
@@ -144,6 +146,7 @@ ${jobList}`,
         match_reasons: s.match_reasons,
         salary_min: src.salary_min,
         salary_max: src.salary_max,
+        postedAt: src.postedAt,
       }
     })
 }
@@ -184,6 +187,25 @@ export type TailoredResume = {
   changes: string[]
 }
 
+export type TailoredResumeJSON = {
+  summary: string
+  skills: string[]
+  certifications: string[]
+  experience: Array<{
+    title: string
+    company: string
+    location: string
+    dates: string
+    bullets: string[]
+  }>
+  education: Array<{
+    degree: string
+    institution: string
+    location: string
+    dates: string
+  }>
+}
+
 export async function tailorResume(params: {
   originalResume: string
   jobDescription: string
@@ -192,37 +214,58 @@ export async function tailorResume(params: {
 
   const response = await getClient().messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
+    max_tokens: 8000,
     messages: [{
       role: 'user',
       content: `You are an ATS optimization expert. Execute these four steps in order, then return a single JSON object.
 
 STEP 1 — Extract ATS keywords
-Identify the 10–15 most critical keywords and phrases an ATS would scan for in this JD. Include: required tools/technologies, job title variants, certifications, key methodologies. Be exact — use the JD's own phrasing.
+Extract the 10–15 most critical ATS keywords. Capture both core domain skills AND specific secondary tools, platforms, or methodologies. Include: required tools/technologies, job title variants, certifications, key methodologies. Use the JD's own phrasing exactly.
 
 STEP 2 — Score the original resume
-Semantically score the ORIGINAL resume against the extracted keywords (0–100). A keyword is "present" if the resume demonstrates that skill — even if phrased differently (e.g. "AWS" matches "Amazon Web Services"). Be honest; do not inflate.
+Semantically score the ORIGINAL resume against the extracted keywords (0–100). A keyword is "present" if the resume demonstrates that skill — even if phrased differently. Be honest; do not inflate.
 
 STEP 3 — Tailor the resume
-Rewrite the resume to naturally integrate any missing keywords from Step 1. Rules:
+Rewrite the resume to naturally integrate missing keywords. Rules:
 - NEVER invent skills or experience the candidate does not have
-- Reformulate real experience using JD vocabulary (e.g. "built data pipelines" → "designed and deployed ETL pipelines in Airflow" if the JD uses those terms and the candidate has the underlying experience)
-- Reorder the Skills section to lead with JD-matching skills
-- Inject missing keywords into relevant Experience bullets where truthfully applicable
+- Reformulate real experience using JD vocabulary where the candidate has the underlying experience
+- Reorder skills to lead with JD-matching skills
 - Keep all dates, companies, titles, and facts unchanged
+- CRITICAL: You must include EVERY job experience entry provided in the original resume. Do not truncate, summarize, or delete older roles to save space. Maintain the full historical scope.
 
 STEP 4 — Score the tailored resume
-Semantically score the TAILORED resume against the same keywords (0–100). This score must be higher than Step 2's score — if it isn't, revise Step 3.
+Semantically score the TAILORED resume (0–100). Must be higher than Step 2.
 
 Return ONLY this JSON (no prose, no code fences):
 {
   "ats_keywords": string[],
   "original_score": number,
   "tailored_score": number,
-  "tailored_text": string,
-  "changes": string[]
+  "changes": string[],
+  "tailored_resume": {
+    "summary": string,
+    "skills": string[],
+    "certifications": string[],
+    "experience": [
+      {
+        "title": string,
+        "company": string,
+        "location": string,
+        "dates": string,
+        "bullets": string[]
+      }
+    ],
+    "education": [
+      {
+        "degree": string,
+        "institution": string,
+        "location": string,
+        "dates": string
+      }
+    ]
+  }
 }
-where changes is max 5 bullet points describing what was reformulated and why.
+where "changes" is max 5 bullet points describing what was reformulated and why.
 
 JOB DESCRIPTION:
 ${jobDescription}
@@ -233,7 +276,21 @@ ${originalResume}`,
   })
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
-  return parseJSON<TailoredResume>(text)
+  const raw = parseJSON<{
+    ats_keywords: string[]
+    original_score: number
+    tailored_score: number
+    changes: string[]
+    tailored_resume: TailoredResumeJSON
+  }>(text)
+
+  return {
+    ats_keywords: raw.ats_keywords,
+    original_score: raw.original_score,
+    tailored_score: raw.tailored_score,
+    changes: raw.changes,
+    tailored_text: JSON.stringify(raw.tailored_resume),
+  }
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
